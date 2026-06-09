@@ -58,6 +58,8 @@ def finish_exercise(user, exercise, reps=None, hold_time_sec=None, notes=''):
 def calculate_volume_trend(user, focus_area: str, days: int = 7) -> Dict[str, Any]:
     from exercises.models import ExerciseCompletion
     from users.models import Profile
+    from django.db.models import Sum, F, FloatField, ExpressionWrapper, Case, When, Value, Coalesce
+    from django.db.models.functions import TruncDate
 
     profile = getattr(user, 'profile', None)
     if not profile or profile.goal_focus != focus_area:
@@ -75,33 +77,43 @@ def calculate_volume_trend(user, focus_area: str, days: int = 7) -> Dict[str, An
 
     categories = focus_to_categories.get(focus_area, ['chest', 'back', 'shoulders'])
 
-    # Get completions for the period
     start_date = timezone.now().date() - timedelta(days=days)
     completions = ExerciseCompletion.objects.filter(
         user=user,
         exercise__category__in=categories,
         date__gte=start_date,
-    ).order_by('date')
-
-    # Calculate total volume
-    total_volume = sum(
-        (comp.reps or 1) * (1 if not comp.hold_time_sec else 0) + (comp.hold_time_sec or 0)
-        for comp in completions
     )
 
-    # Daily breakdown
-    daily_breakdown = {}
-    for comp in completions:
-        volume = (comp.reps or 1) + (comp.hold_time_sec or 0) / 30
-        daily_breakdown[comp.date] = daily_breakdown.get(comp.date, 0) + volume
+    # DB-level total volume: reps if no hold_time, else hold_time_sec
+    volume_expr = ExpressionWrapper(
+        Case(
+            When(hold_time_sec__gt=0, then=Coalesce(F('hold_time_sec'), Value(0))),
+            default=Coalesce(F('reps'), Value(1)),
+            output_field=FloatField(),
+        ),
+        output_field=FloatField(),
+    )
+    total_volume = completions.aggregate(total=Sum(volume_expr))['total'] or 0
 
-    daily_list = sorted(daily_breakdown.items())
+    # DB-level daily breakdown
+    daily_volume_expr = ExpressionWrapper(
+        Coalesce(F('reps'), Value(1)) + Coalesce(F('hold_time_sec'), Value(0)) / 30.0,
+        output_field=FloatField(),
+    )
+    daily_list = list(
+        completions.annotate(day=TruncDate('date'))
+        .values('day')
+        .annotate(volume=Sum(daily_volume_expr))
+        .order_by('day')
+        .values_list('day', 'volume')
+    )
 
     # Calculate trend direction
     trend_direction = 'stable'
     if len(daily_list) >= 2:
-        first_half_avg = sum(v for d, v in daily_list[:len(daily_list)//2]) / max(1, len(daily_list)//2)
-        second_half_avg = sum(v for d, v in daily_list[len(daily_list)//2:]) / max(1, len(daily_list) - len(daily_list)//2)
+        mid = len(daily_list) // 2
+        first_half_avg = sum(v for d, v in daily_list[:mid]) / max(1, mid)
+        second_half_avg = sum(v for d, v in daily_list[mid:]) / max(1, len(daily_list) - mid)
         if second_half_avg > first_half_avg * 1.1:
             trend_direction = 'up'
         elif second_half_avg < first_half_avg * 0.9:
@@ -218,18 +230,20 @@ def generate_focus_alignment_message(user, goal: Optional[Goal] = None) -> Dict[
     }
 
 
-def build_focus_suggestions(goal, completions):
+def build_focus_suggestions(goal, user):
+    from exercises.models import ExerciseCompletion
+    from django.db.models import Max
+
     suggestions = []
     if not goal:
         return suggestions
 
     if goal.goal_type == 'calisthenics':
+        qs = ExerciseCompletion.objects.filter(user=user)
         for keyword, target in CALISTHENICS_BENCHMARKS.items():
-            max_reps = max(
-                (comp.reps or 0)
-                for comp in completions
-                if comp.exercise and keyword in comp.exercise.name.lower()
-            ) if completions else 0
+            max_reps = qs.filter(
+                exercise__name__icontains=keyword
+            ).aggregate(max_reps=Max('reps'))['max_reps'] or 0
             if max_reps < target:
                 suggestions.append(
                     f"Focus on: Increasing {keyword.title()} volume to reach your Calisthenics goal."
@@ -248,7 +262,7 @@ def index(request):
     completions = ExerciseCompletion.objects.filter(user=request.user).order_by('-date')[:50]
 
     assigned_exercises = goal.assigned_exercises.all() if goal else Exercise.objects.none()
-    focus_suggestions = build_focus_suggestions(goal, completions)
+    focus_suggestions = build_focus_suggestions(goal, request.user)
 
     # Generate dynamic focus alignment message
     focus_alignment = generate_focus_alignment_message(request.user, goal)

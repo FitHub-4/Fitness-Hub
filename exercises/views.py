@@ -147,6 +147,11 @@ def exercise_list(request):
 
     exercises.sort(key=lambda item: (not item.get('recommended', False), item['name']))
 
+    recommended_count = 0
+    if not show_all and recommended_slugs:
+        from django.db.models import Count
+        recommended_count = Exercise.objects.filter(slug__in=recommended_slugs).count()
+
     context = {
         'exercises': exercises,
         'active_goal': active_goal,
@@ -154,7 +159,7 @@ def exercise_list(request):
         'focus_areas': focus_areas,
         'show_all': show_all,
         'total_count': len(exercises),
-        'recommended_count': sum(1 for e in exercises if e['recommended']),
+        'recommended_count': recommended_count,
     }
     return render(request, 'exercises/exercise_list.html', context)
 

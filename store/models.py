@@ -100,10 +100,13 @@ class Cart(models.Model):
         return f"Cart #{self.pk} (session)"
 
     def subtotal(self):
-        return sum(item.line_total() for item in self.items.select_related('product'))
+        from django.db.models import Sum, F
+        result = self.items.aggregate(total=Sum(F('product__price') * F('quantity')))
+        return result['total'] or 0
 
     def item_count(self):
-        return sum(item.quantity for item in self.items.all())
+        from django.db.models import Sum
+        return self.items.aggregate(total=Sum('quantity'))['total'] or 0
 
     def shipping(self):
         return 0 if self.subtotal() >= 50 else 4.99
@@ -185,7 +188,8 @@ class Order(models.Model):
         super().save(*args, **kwargs)
 
     def item_count(self):
-        return sum(item.quantity for item in self.items.all())
+        from django.db.models import Sum
+        return self.items.aggregate(total=Sum('quantity'))['total'] or 0
 
 
 class OrderItem(models.Model):

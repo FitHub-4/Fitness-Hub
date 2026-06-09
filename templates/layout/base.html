@@ -7,7 +7,8 @@
     <title>{% block title %}Fitness Hub — Train smarter, eat better, feel your best{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'chatbot/css/chat.css' %}">
     <meta name="csrf-token" content="{{ csrf_token }}">
@@ -15,11 +16,17 @@
     <script defer src="{% static 'js/script.js' %}"></script>
 </head>
 <body>
+    <div id="bg-mesh" aria-hidden="true">
+        <div class="glow-blob blob-1"></div>
+        <div class="glow-blob blob-2"></div>
+        <div class="glow-blob blob-3"></div>
+    </div>
+
     <header class="site-header" id="siteHeader">
         <div class="container nav-wrapper">
             <a class="brand" href="{% url 'home' %}">
-                <span class="brand-mark">F</span>
-                <span class="brand-text">Fitness <strong>Hub</strong></span>
+                <img src="{% static 'images/logo.png' %}" alt="" class="brand-logo">
+                <span class="brand-text">Fitness<strong>-Hub</strong></span>
             </a>
             <nav class="main-nav" id="mainNav" aria-label="Primary">
                 {% if user.is_authenticated %}
@@ -44,7 +51,11 @@
                     <a href="{% url 'register' %}" class="nav-cta">Sign Up</a>
                 {% endif %}
             </nav>
-            <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu" aria-expanded="false">Menu</button>
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu" aria-expanded="false">
+                <span class="menu-bar"></span>
+                <span class="menu-bar"></span>
+                <span class="menu-bar"></span>
+            </button>
         </div>
     </header>
 
@@ -62,8 +73,8 @@
     <footer class="site-footer">
         <div class="container">
             <div class="footer-brand-row">
-                <span class="brand-mark">F</span>
-                <span class="brand-text">Fitness <strong>Hub</strong></span>
+                <img src="{% static 'images/logo.png' %}" alt="" class="brand-logo footer-logo">
+                <span class="brand-text footer-brand-text">Fitness<strong>-Hub</strong></span>
             </div>
             <p>Fitness Hub &copy; {% now 'Y' %} &mdash; Build strength, stay motivated, and move better every day.</p>
             <p class="footer-contact">
@@ -75,9 +86,6 @@
         </div>
     </footer>
 
-    <script>
-    // Scroll-aware header is handled by /static/js/script.js
-    </script>
     <script defer src="{% static 'chatbot/js/chat.js' %}"></script>
 </body>
 </html>

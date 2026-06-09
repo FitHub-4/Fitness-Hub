@@ -1,11 +1,11 @@
 {% extends 'layout/base.html' %}
+{% load static %}
 {% block content %}
 <section class="auth-page">
   <aside class="auth-side">
     <div class="auth-side-inner">
       <a class="brand" href="{% url 'home' %}" style="margin-bottom:0.5rem;">
-        <span class="brand-mark">F</span>
-        <span class="brand-text">Fitness <strong>Hub</strong></span>
+        <img src="{% static 'images/logo.png' %}" alt="Fitness Hub" class="brand-logo">
       </a>
       <span class="eyebrow">Create your account</span>
       <h1>Two minutes now, better training forever.</h1>

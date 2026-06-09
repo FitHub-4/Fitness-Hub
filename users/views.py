@@ -92,7 +92,8 @@ def edit_profile(request):
 def exercise_records(request):
     from exercises.models import ExerciseCompletion
     from collections import OrderedDict
-    from django.db.models import Sum
+    from django.db.models import Sum, F, ExpressionWrapper, IntegerField, Count, Case, When, Value, Coalesce
+    from django.db.models.functions import TruncDate
 
     completions = (
         ExerciseCompletion.objects
@@ -101,16 +102,43 @@ def exercise_records(request):
         .order_by('-date', '-id')
     )
 
+    calories_per_rep = ExpressionWrapper(
+        Case(
+            When(exercise__default_reps=0, then=Value(0)),
+            default=F('exercise__calories_per_set') * Coalesce(F('reps'), Value(1)) / F('exercise__default_reps'),
+            output_field=IntegerField(),
+        ),
+        output_field=IntegerField(),
+    )
+
+    summary = completions.aggregate(
+        total_sessions=Count('date', distinct=True),
+        total_completions=Count('id'),
+        total_reps=Sum('reps', default=0),
+        total_calories=Sum(calories_per_rep, default=0),
+        total_minutes=Sum('exercise__duration_min', default=0),
+    )
+
+    date_totals = {
+        row['date']: row
+        for row in completions.values('date').annotate(
+            d_reps=Sum('reps', default=0),
+            d_calories=Sum(calories_per_rep, default=0),
+            d_minutes=Sum('exercise__duration_min', default=0),
+        )
+    }
+
     records_by_date = OrderedDict()
     for c in completions:
         date_key = c.date
         if date_key not in records_by_date:
+            dt = date_totals.get(date_key, {})
             records_by_date[date_key] = {
                 'date': c.date,
                 'exercises': [],
-                'total_reps': 0,
-                'total_calories': 0,
-                'total_minutes': 0,
+                'total_reps': dt.get('d_reps', 0),
+                'total_calories': dt.get('d_calories', 0),
+                'total_minutes': dt.get('d_minutes', 0),
             }
         entry = records_by_date[date_key]
         reps = c.reps or 0
@@ -126,19 +154,8 @@ def exercise_records(request):
             'minutes': minutes,
             'calories': calories,
         })
-        entry['total_reps'] += reps
-        entry['total_calories'] += calories
-        entry['total_minutes'] += minutes
 
     records = list(records_by_date.values())
-
-    summary = {
-        'total_sessions': completions.values('date').distinct().count(),
-        'total_completions': completions.count(),
-        'total_reps': sum(r['total_reps'] for r in records),
-        'total_calories': sum(r['total_calories'] for r in records),
-        'total_minutes': sum(r['total_minutes'] for r in records),
-    }
 
     return render(
         request,
