@@ -1,6 +1,6 @@
 """Response generator: intent + knowledge + safety → user-facing reply."""
 
-from . import intent, knowledge, safety
+from . import intent, knowledge, safety, llm_responder
 
 
 # ---------------------------------------------------------------------------
@@ -229,6 +229,12 @@ def respond(user_input: str, user=None) -> dict:
     intent_name = intent.classify(user_input)
     text = user_input.strip()
     text_l = text.lower()
+
+    # 3b. Try LLM for non-trivial intents (skip greeting/goodbye/thanks for speed).
+    if intent_name not in (intent.INTENT_GREETING, intent.INTENT_GOODBYE, intent.INTENT_THANKS):
+        llm_reply = llm_responder.get_llm_response(text, user=user)
+        if llm_reply is not None:
+            return {'reply': llm_reply, 'intent': intent_name, 'refused': False, 'reason': ''}
 
     # 4. Generate reply per intent.
     reply = ''

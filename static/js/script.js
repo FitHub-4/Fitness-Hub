@@ -1,11 +1,35 @@
 (function () {
     const menuToggle = document.getElementById('menuToggle');
     const mainNav = document.getElementById('mainNav');
+
+    function closeMenu() {
+        if (!menuToggle || !mainNav) return;
+        mainNav.classList.remove('open');
+        menuToggle.classList.remove('active');
+        menuToggle.setAttribute('aria-expanded', 'false');
+    }
+
     if (menuToggle && mainNav) {
         menuToggle.addEventListener('click', () => {
             const open = mainNav.classList.toggle('open');
             menuToggle.classList.toggle('active', open);
             menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+
+        // Close menu on any nav link click (for mobile)
+        mainNav.querySelectorAll('a, button').forEach((el) => {
+            el.addEventListener('click', () => {
+                if (window.innerWidth <= 992) {
+                    closeMenu();
+                }
+            });
+        });
+
+        // Close menu on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && mainNav.classList.contains('open')) {
+                closeMenu();
+            }
         });
     }
 
@@ -71,6 +95,26 @@
                 });
             }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
             revealEls.forEach((el) => obs.observe(el));
+        }
+    }
+
+    const dropdown = document.querySelector('.nav-dropdown');
+    if (dropdown) {
+        const trigger = dropdown.querySelector('.nav-dropdown__trigger');
+        const menu = dropdown.querySelector('.nav-dropdown__menu');
+        if (trigger && menu) {
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const open = trigger.getAttribute('aria-expanded') === 'true';
+                trigger.setAttribute('aria-expanded', open ? 'false' : 'true');
+                menu.classList.toggle('is-open', !open);
+            });
+            document.addEventListener('click', (e) => {
+                if (!dropdown.contains(e.target)) {
+                    trigger.setAttribute('aria-expanded', 'false');
+                    menu.classList.remove('is-open');
+                }
+            });
         }
     }
 })();

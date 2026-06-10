@@ -1,5 +1,6 @@
 {% extends 'layout/base.html' %}
 {% load static %}
+{% block body_class %}landing-page{% endblock %}
 {% block content %}
 
 {% if not user.is_authenticated %}

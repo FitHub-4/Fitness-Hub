@@ -8,14 +8,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <link rel="icon" type="image/jpeg" href="{% static 'images/Logo.jpg' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'chatbot/css/chat.css' %}">
     <meta name="csrf-token" content="{{ csrf_token }}">
     {% block extra_head %}{% endblock %}
     <script defer src="{% static 'js/script.js' %}"></script>
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
     <div id="bg-mesh" aria-hidden="true">
         <div class="glow-blob blob-1"></div>
         <div class="glow-blob blob-2"></div>
@@ -25,8 +25,8 @@
     <header class="site-header" id="siteHeader">
         <div class="container nav-wrapper">
             <a class="brand" href="{% url 'home' %}">
-                <img src="{% static 'images/logo.png' %}" alt="" class="brand-logo">
-                <span class="brand-text">Fitness<strong>-Hub</strong></span>
+                <img src="{% static 'images/Logo.jpg' %}" alt="" class="brand-logo">
+                <span class="brand-text">Fitness<span class="brand-highlight">Hub</span></span>
             </a>
             <nav class="main-nav" id="mainNav" aria-label="Primary">
                 {% if user.is_authenticated %}
@@ -38,12 +38,29 @@
                     <a href="{% url 'store-home' %}" class="{% if 'store' in request.resolver_match.url_name or 'product' in request.resolver_match.url_name or 'order' in request.resolver_match.url_name or 'cart' in request.resolver_match.url_name or 'checkout' in request.resolver_match.url_name %}is-active{% endif %}">Store</a>
                     <a href="{% url 'view-cart' %}" class="nav-cart {% if request.resolver_match.url_name == 'view-cart' or request.resolver_match.url_name == 'checkout' %}is-active{% endif %}">Cart <span class="nav-cart-badge">{{ cart_count|default:0 }}</span></a>
                     <a href="{% url 'inspiration-feed' %}" class="{% if 'inspiration' in request.resolver_match.url_name %}is-active{% endif %}">Inspiration</a>
-                    <a href="{% url 'profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}is-active{% endif %}">Profile</a>
-                    <a href="{% url 'settings-hub' %}" class="{% if 'settings' in request.resolver_match.url_name %}is-active{% endif %}">Settings</a>
-                    <form action="{% url 'logout' %}" method="post" class="nav-form">
-                        {% csrf_token %}
-                        <button type="submit" class="nav-link-button">Logout</button>
-                    </form>
+                    <div class="nav-dropdown">
+                        <button class="nav-dropdown__trigger" aria-haspopup="true" aria-expanded="false" aria-label="User menu">
+                            <svg class="nav-kebab" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <circle cx="10" cy="4" r="1.5" fill="currentColor"/>
+                                <circle cx="10" cy="10" r="1.5" fill="currentColor"/>
+                                <circle cx="10" cy="16" r="1.5" fill="currentColor"/>
+                            </svg>
+                        </button>
+                        <div class="nav-dropdown__menu" role="menu">
+                            <div class="nav-dropdown__header">
+                                <span class="nav-dropdown__name">{{ user.get_full_name|default:user.username }}</span>
+                                <span class="nav-dropdown__email">{{ user.email }}</span>
+                            </div>
+                            <div class="nav-dropdown__divider"></div>
+                            <a href="{% url 'profile' %}" class="nav-dropdown__item" role="menuitem">Profile</a>
+                            <a href="{% url 'settings-hub' %}" class="nav-dropdown__item" role="menuitem">Settings</a>
+                            <div class="nav-dropdown__divider"></div>
+                            <form action="{% url 'logout' %}" method="post" class="nav-dropdown__form">
+                                {% csrf_token %}
+                                <button type="submit" class="nav-dropdown__item nav-dropdown__item--logout" role="menuitem">Logout</button>
+                            </form>
+                        </div>
+                    </div>
                 {% else %}
                     <a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}is-active{% endif %}">Home</a>
                     <a href="{% url 'about' %}">About</a>
@@ -73,8 +90,7 @@
     <footer class="site-footer">
         <div class="container">
             <div class="footer-brand-row">
-                <img src="{% static 'images/logo.png' %}" alt="" class="brand-logo footer-logo">
-                <span class="brand-text footer-brand-text">Fitness<strong>-Hub</strong></span>
+                <img src="{% static 'images/Logo.jpg' %}" alt="Fitness Hub" class="footer-logo">
             </div>
             <p>Fitness Hub &copy; {% now 'Y' %} &mdash; Build strength, stay motivated, and move better every day.</p>
             <p class="footer-contact">

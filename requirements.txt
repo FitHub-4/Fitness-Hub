@@ -5,3 +5,4 @@ pillow
 python-dotenv
 stripe
 coverage
+openai
