@@ -5,6 +5,7 @@
 {% endblock %}
 {% block content %}
 <section class="store-page">
+  {% include 'store/partials/store_nav.html' %}
   <nav class="breadcrumbs">
     <a href="{% url 'store-home' %}">Store</a>
     <span class="sep">/</span>

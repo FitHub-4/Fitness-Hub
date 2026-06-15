@@ -1200,3 +1200,55 @@
   gap: 0.75rem;
   justify-content: center;
 }
+
+/* ---------- Store Navbar ---------- */
+.diet-layout {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+.diet-layout .diet-page {
+  padding: 0;
+}
+
+.store-navbar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--diet-border);
+}
+
+.store-navbar__cart {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--diet-text-dim);
+  text-decoration: none;
+  border-radius: 8px;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.store-navbar__cart:hover {
+  color: var(--diet-text);
+  background: var(--diet-card);
+}
+
+.store-navbar__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--cyan), var(--purple));
+  border-radius: 999px;
+  line-height: 1;
+}

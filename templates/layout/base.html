@@ -36,7 +36,6 @@
                     <a href="{% url 'progress' %}" class="{% if 'progress' in request.resolver_match.url_name %}is-active{% endif %}">Progress</a>
                     <a href="{% url 'diet' %}" class="{% if 'diet' in request.resolver_match.url_name %}is-active{% endif %}">Diet</a>
                     <a href="{% url 'store-home' %}" class="{% if 'store' in request.resolver_match.url_name or 'product' in request.resolver_match.url_name or 'order' in request.resolver_match.url_name or 'cart' in request.resolver_match.url_name or 'checkout' in request.resolver_match.url_name %}is-active{% endif %}">Store</a>
-                    <a href="{% url 'view-cart' %}" class="nav-cart {% if request.resolver_match.url_name == 'view-cart' or request.resolver_match.url_name == 'checkout' %}is-active{% endif %}">Cart <span class="nav-cart-badge">{{ cart_count|default:0 }}</span></a>
                     <a href="{% url 'inspiration-feed' %}" class="{% if 'inspiration' in request.resolver_match.url_name %}is-active{% endif %}">Inspiration</a>
                     <div class="nav-dropdown">
                         <button class="nav-dropdown__trigger" aria-haspopup="true" aria-expanded="false" aria-label="User menu">
@@ -95,9 +94,7 @@
             <p>Fitness Hub &copy; {% now 'Y' %} &mdash; Build strength, stay motivated, and move better every day.</p>
             <p class="footer-contact">
                 For more info contact
-                <a href="mailto:sagarshahi865@gmail.com">sagarshahi865@gmail.com</a>
-                /
-                <a href="mailto:suwalunish123@gmail.com">suwalunish123@gmail.com</a>
+                <a href="mailto:fitnesshub.net@gmail.com">fitnesshub.net@gmail.com</a>
             </p>
         </div>
     </footer>

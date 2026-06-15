@@ -92,8 +92,8 @@ def edit_profile(request):
 def exercise_records(request):
     from exercises.models import ExerciseCompletion
     from collections import OrderedDict
-    from django.db.models import Sum, F, ExpressionWrapper, IntegerField, Count, Case, When, Value, Coalesce
-    from django.db.models.functions import TruncDate
+    from django.db.models import Sum, Count, ExpressionWrapper, Case, When, Value, F, IntegerField
+    from django.db.models.functions import Coalesce
 
     completions = (
         ExerciseCompletion.objects

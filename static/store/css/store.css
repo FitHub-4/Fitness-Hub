@@ -67,6 +67,53 @@
   margin: 0.25rem 0;
 }
 
+/* ---- Store Sub-Nav ---- */
+.store-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--store-border);
+}
+.store-nav__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--store-text-dim);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: color 0.2s ease, background 0.2s ease;
+}
+.store-nav__link:hover {
+    color: var(--store-text);
+    background: var(--store-card);
+}
+.store-nav__link.is-active {
+    color: var(--store-text);
+    background: var(--store-card);
+}
+.store-nav__link--cart {
+    margin-left: auto;
+}
+.store-nav__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #fff;
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    border-radius: 999px;
+    line-height: 1;
+}
+
 .store-section {
   margin-top: 4rem;
 }

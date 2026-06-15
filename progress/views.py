@@ -58,8 +58,8 @@ def finish_exercise(user, exercise, reps=None, hold_time_sec=None, notes=''):
 def calculate_volume_trend(user, focus_area: str, days: int = 7) -> Dict[str, Any]:
     from exercises.models import ExerciseCompletion
     from users.models import Profile
-    from django.db.models import Sum, F, FloatField, ExpressionWrapper, Case, When, Value, Coalesce
-    from django.db.models.functions import TruncDate
+    from django.db.models import Sum, F, FloatField, ExpressionWrapper, Case, When, Value
+    from django.db.models.functions import Coalesce, TruncDate
 
     profile = getattr(user, 'profile', None)
     if not profile or profile.goal_focus != focus_area:

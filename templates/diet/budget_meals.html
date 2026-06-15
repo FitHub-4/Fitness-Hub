@@ -4,6 +4,8 @@
 <link rel="stylesheet" href="{% static 'diet/css/diet.css' %}">
 {% endblock %}
 {% block content %}
+<div class="diet-layout">
+{% include 'store/partials/store_nav.html' %}
 <section class="diet-page">
   <div class="page-head">
     <div>
@@ -76,4 +78,5 @@
     </ul>
   </div>
 </section>
+</div>
 {% endblock %}
