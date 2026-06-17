@@ -14,7 +14,7 @@ ACTIVITY_LABELS = {
     'sedentary': 'Sedentary',
     'light': 'Lightly Active',
     'moderate': 'Moderately Active',
-    'active': 'Very Active',
+    'active': 'Active',
     'very_active': 'Very Active',
 }
 
@@ -60,8 +60,8 @@ def calculate_bmr(weight_kg: float, height_ft: float, age: int, sex: str) -> flo
     """Mifflin-St Jeor BMR using kg + cm (height is converted from feet)."""
     height_cm = float(height_ft) * FT_TO_CM
     if sex == 'male':
-        return 88.362 + (13.397 * weight_kg) + (4.799 * height_cm) - (5.677 * age)
-    return 447.593 + (9.247 * weight_kg) + (3.098 * height_cm) - (4.330 * age)
+        return (10 * weight_kg) + (6.25 * height_cm) - (5 * age) + 5
+    return (10 * weight_kg) + (6.25 * height_cm) - (5 * age) - 161
 
 
 def calculate_tdee(bmr: float, activity_level: str) -> float:
@@ -119,11 +119,15 @@ def generate_nutrition_plan(profile, weight_kg: Optional[float] = None, height_f
     body_type = getattr(profile, 'body_type', 'mesomorph') or 'mesomorph'
     macros = calculate_macros(target_calories, weight_kg, body_type, goal)
 
-    body_type_name = {
+    BODY_TYPE_NAMES = {
+        'ectomorph': 'Ectomorph',
+        'mesomorph': 'Mesomorph',
+        'endomorph': 'Endomorph',
         'lean': 'Ectomorph',
         'average': 'Mesomorph',
         'stocky': 'Endomorph',
-    }.get(body_type, body_type.title())
+    }
+    body_type_name = BODY_TYPE_NAMES.get(body_type, body_type.title())
 
     goal_name = goal.replace('_', ' ').title() if goal else 'Maintenance'
     activity_name = ACTIVITY_LABELS.get(activity_level, activity_level.title())

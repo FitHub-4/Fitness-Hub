@@ -19,14 +19,14 @@ class Exercise(models.Model):
 
 	name = models.CharField(max_length=200)
 	slug = models.SlugField(max_length=220, unique=True, blank=True)
-	category = models.CharField(max_length=40, choices=CATEGORY)
+	category = models.CharField(max_length=40, choices=CATEGORY, db_index=True)
 	description = models.TextField(blank=True)
 	target_muscles = models.CharField(max_length=200, blank=True)
-	difficulty = models.CharField(max_length=20, choices=DIFFICULTY, default='beginner')
+	difficulty = models.CharField(max_length=20, choices=DIFFICULTY, default='beginner', db_index=True)
 	equipment = models.CharField(max_length=200, blank=True)
 	image_url = models.URLField(blank=True)
 	video_url = models.URLField(blank=True)
-	goal = models.CharField(max_length=30, choices=GOAL_CHOICES, default='general')
+	goal = models.CharField(max_length=30, choices=GOAL_CHOICES, default='general', db_index=True)
 	default_reps = models.PositiveSmallIntegerField(default=10)
 	default_sets = models.PositiveSmallIntegerField(default=3)
 	duration_min = models.PositiveSmallIntegerField(default=5)
@@ -45,20 +45,29 @@ class Exercise(models.Model):
 
 	def save(self, *args, **kwargs):
 		if not self.slug:
-			self.slug = slugify(self.name)
+			base_slug = slugify(self.name)
+			slug = base_slug
+			counter = 1
+			while Exercise.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+				slug = f"{base_slug}-{counter}"
+				counter += 1
+			self.slug = slug
 		super().save(*args, **kwargs)
 
 
 class ExerciseCompletion(models.Model):
 	user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='exercise_completions')
 	exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name='completions')
-	date = models.DateField(auto_now_add=True)
+	date = models.DateField(auto_now_add=True, db_index=True)
 	reps = models.PositiveIntegerField(null=True, blank=True)
 	hold_time_sec = models.PositiveIntegerField(null=True, blank=True)
 	notes = models.TextField(blank=True)
 
 	class Meta:
 		ordering = ['-date']
+		indexes = [
+			models.Index(fields=['user', 'date']),
+		]
 
 	def __str__(self):
 		return f"{self.user.username} — {self.exercise.name} — {self.date}"

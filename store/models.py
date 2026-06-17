@@ -1,4 +1,7 @@
+from decimal import Decimal
+
 from django.db import models
+from django.db.models import Sum, F
 from django.utils.text import slugify
 from django.urls import reverse
 
@@ -100,22 +103,21 @@ class Cart(models.Model):
         return f"Cart #{self.pk} (session)"
 
     def subtotal(self):
-        from django.db.models import Sum, F
         result = self.items.aggregate(total=Sum(F('product__price') * F('quantity')))
-        return result['total'] or 0
+        return result['total'] or Decimal('0')
 
     def item_count(self):
-        from django.db.models import Sum
-        return self.items.aggregate(total=Sum('quantity'))['total'] or 0
+        result = self.items.aggregate(total=Sum('quantity'))
+        return result['total'] or 0
 
     def shipping(self):
-        return 0 if self.subtotal() >= 50 else 4.99
+        return Decimal('0') if self.subtotal() >= Decimal('5000') else Decimal('499')
 
     def tax(self):
-        return round(float(self.subtotal()) * 0.08, 2)
+        return (self.subtotal() * Decimal('0.08')).quantize(Decimal('0.01'))
 
     def total(self):
-        return float(self.subtotal()) + float(self.shipping()) + float(self.tax())
+        return self.subtotal() + self.shipping() + self.tax()
 
     def is_empty(self):
         return not self.items.exists()
@@ -128,7 +130,9 @@ class CartItem(models.Model):
     added_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('cart', 'product')
+        constraints = [
+            models.UniqueConstraint(fields=['cart', 'product'], name='unique_cart_product'),
+        ]
         ordering = ['-added_at']
 
     def __str__(self):
@@ -188,8 +192,8 @@ class Order(models.Model):
         super().save(*args, **kwargs)
 
     def item_count(self):
-        from django.db.models import Sum
-        return self.items.aggregate(total=Sum('quantity'))['total'] or 0
+        result = self.items.aggregate(total=Sum('quantity'))
+        return result['total'] or 0
 
 
 class OrderItem(models.Model):

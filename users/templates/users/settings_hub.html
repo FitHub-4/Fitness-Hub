@@ -28,11 +28,11 @@
           <span class="settings-card-icon">@</span>
           <h2>Account details</h2>
         </div>
-        <p>Change your username, display name, and email address. Email is required for password recovery.</p>
+        <p>Change your username, display name, and email address.</p>
         <div class="settings-card-meta">
           <span class="settings-pill">@{{ user_obj.username }}</span>
           {% if has_full_name %}<span class="settings-pill is-ok">Name on file</span>{% else %}<span class="settings-pill is-warn">No name set</span>{% endif %}
-          {% if has_email %}<span class="settings-pill is-ok">Email verified</span>{% else %}<span class="settings-pill is-warn">Email missing</span>{% endif %}
+          {% if has_email %}          <span class="settings-pill is-ok">Email on file</span>{% else %}<span class="settings-pill is-warn">Email missing</span>{% endif %}
         </div>
         <span class="settings-card-cta">Edit account</span>
       </a>

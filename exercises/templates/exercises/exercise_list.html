@@ -25,8 +25,7 @@
     </div>
     {% if user.is_authenticated %}
       <div class="exercises-actions">
-        <a class="btn btn-outline-light btn-sm" href="{% url 'exercise-records' %}"><span class="icon-inline">📋</span>My Workout Records</a>
-        <a class="btn btn-outline-light btn-sm" href="{% url 'progress' %}"><span class="icon-inline">📈</span>Progress</a>
+        <a class="btn btn-outline-light btn-sm" href="{% url 'select-goal' %}"><span class="icon-inline">🎯</span>Change Goal</a>
       </div>
     {% endif %}
   </div>

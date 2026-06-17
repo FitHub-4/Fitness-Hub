@@ -20,6 +20,7 @@
       </div>
     </div>
     <div class="page-head-actions">
+      {% include 'store/partials/cart_badge.html' %}
       <span class="order-status status-{{ order.status }}">{{ order.get_status_display }}</span>
     </div>
   </div>

@@ -28,6 +28,7 @@
     </div>
     <div class="page-head-actions">
       <span class="result-count">{{ page_obj.paginator.count }} product{{ page_obj.paginator.count|pluralize }}</span>
+      {% include 'store/partials/cart_badge.html' %}
     </div>
   </div>
 

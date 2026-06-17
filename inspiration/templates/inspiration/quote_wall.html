@@ -26,7 +26,7 @@
     {% if quotes %}
     <div class="insp-quote-grid insp-quote-grid-wide">
       {% for quote in quotes %}
-      <article class="insp-quote-card insp-accent-{{ quote.category.accent|default:'emerald' }}">
+      <article class="insp-quote-card insp-accent-{% if quote.category %}{{ quote.category.accent }}{% else %}emerald{% endif %}">
         <blockquote>&ldquo;{{ quote.text }}&rdquo;</blockquote>
         <p class="insp-quote-author">&mdash; {{ quote.author }}</p>
         {% if quote.icon %}

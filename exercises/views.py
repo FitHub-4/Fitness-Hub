@@ -1,14 +1,20 @@
+import logging
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from core.utils import get_current_goal
 from goals.models import Goal
 from .goal_logic import adjust_reps_sets_for_body_type, filter_exercises_by_goal
 from .models import Exercise, ExerciseCompletion
+from achievements import signals as achv_signals
+
+logger = logging.getLogger(__name__)
 
 
 def _parse_steps(text):
@@ -51,17 +57,9 @@ def _parse_steps(text):
 def _build_recommended_slugs(user, selected_goal: str, focus_areas: list) -> set:
     if not selected_goal or selected_goal == 'my_plan':
         return set()
-    ex_qs = Exercise.objects.all()
-    ex_list = [
-        {
-            'name': ex.name,
-            'slug': ex.slug,
-            'category': ex.category,
-            'equipment': ex.equipment,
-            'goal': ex.goal,
-        }
-        for ex in ex_qs
-    ]
+    ex_list = list(
+        Exercise.objects.values('name', 'slug', 'category', 'equipment', 'goal')
+    )
     filtered = filter_exercises_by_goal(ex_list, selected_goal, focus_areas)
     return {item.get('slug') for item in filtered}
 
@@ -124,6 +122,7 @@ def exercise_list(request):
         reps_sets = adjust_reps_sets_for_body_type(
             ex.default_reps, ex.default_sets, body_type
         )
+        recommended = (ex.slug in recommended_slugs) and not show_all
         exercises.append({
             'name': ex.name,
             'slug': ex.slug,
@@ -142,15 +141,12 @@ def exercise_list(request):
             'sets': reps_sets['sets'],
             'duration_min': ex.duration_min,
             'calories_per_set': ex.calories_per_set,
-            'recommended': (ex.slug in recommended_slugs) and not show_all,
+            'recommended': recommended,
         })
 
     exercises.sort(key=lambda item: (not item.get('recommended', False), item['name']))
 
-    recommended_count = 0
-    if not show_all and recommended_slugs:
-        from django.db.models import Count
-        recommended_count = Exercise.objects.filter(slug__in=recommended_slugs).count()
+    recommended_count = sum(1 for ex in exercises if ex['recommended'])
 
     context = {
         'exercises': exercises,
@@ -217,19 +213,28 @@ def quick_complete(request, slug):
     stats, _ = _get_or_create_stats(request.user)
     from django.utils import timezone
     today = timezone.now().date()
-    if not stats.last_workout_date or stats.last_workout_date != today:
+    previous_last_date = stats.last_workout_date
+    if not previous_last_date or previous_last_date != today:
         stats.total_workouts += 1
-        stats.last_workout_date = today
-        stats.update_streak()
+        stats.update_streak(last_workout_date=previous_last_date)
     else:
-        stats.save()
+        stats.save(update_fields=['updated_at'])
+
+    try:
+        achv_signals.check_workout_achievements(request.user)
+        achv_signals.check_streak_achievements(request.user)
+        achv_signals.check_volume_achievements(request.user)
+    except Exception as e:
+        logger.warning('Achievement check failed: %s', e)
 
     messages.success(
         request,
         f'Great work! {exercise.name} logged. Keep it up!',
     )
-    next_url = request.POST.get('next') or reverse('exercise-detail', args=[slug])
-    return redirect(next_url)
+    next_url = request.POST.get('next')
+    if next_url and not url_has_allowed_host_and_scheme(next_url, allowed_hosts=None):
+        next_url = None
+    return redirect(next_url or reverse('exercise-detail', args=[slug]))
 
 
 def _get_or_create_stats(user):

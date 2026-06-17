@@ -46,6 +46,6 @@ def cart_context(request):
             cart = Cart.objects.filter(session_key=session_key, user__isnull=True).first() if session_key else None
         if cart:
             count = cart.item_count()
-    except Exception:
+    except (Cart.DoesNotExist, AttributeError, TypeError):
         count = 0
     return {'cart_count': count}

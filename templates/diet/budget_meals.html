@@ -38,7 +38,8 @@
     </div>
     <div class="summary-stat weekly">
       <span class="stat-label">Weekly Cost</span>
-      <span class="stat-value">NRS {{ totals.total_cost|add:totals.total_cost|add:totals.total_cost|add:totals.total_cost|add:totals.total_cost|add:totals.total_cost|add:totals.total_cost|floatformat:2 }}</span>
+      {% widthratio totals.total_cost 1 7 as weekly_raw %}
+      <span class="stat-value">NRS {{ weekly_raw|floatformat:2 }}</span>
     </div>
   </div>
 

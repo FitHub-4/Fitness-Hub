@@ -60,8 +60,8 @@ MEDICAL_DISCLAIMER = (
 
 
 SUPPORT_CONTACT = (
-    "For anything outside fitness and the app, please reach the team at "
-    "suwalunish123@gmail.com or sagarshahi865@gmail.com."
+    "For anything outside fitness and the app, please reach out to the team "
+    "via the contact section on the about page."
 )
 
 
@@ -133,19 +133,16 @@ def sanitize_output(text: str) -> str:
     if not text:
         return text
     cleaned = text
-    # If our own response accidentally contains a diagnosis pattern, we soften it.
+    import re
     bad_phrases = [
-        ('you have ', 'this may be related to '),
-        ('you are diagnosed with ', 'this could relate to '),
-        ('you definitely have ', 'this could possibly relate to '),
-        ('definitely have ', 'may relate to '),
-        ('certainly have ', 'may relate to '),
+        (r'\byou have\b', 'this may be related to'),
+        (r'\byou are diagnosed with\b', 'this could relate to'),
+        (r'\byou definitely have\b', 'this could possibly relate to'),
+        (r'\bdefinitely have\b', 'may relate to'),
+        (r'\bcertainly have\b', 'may relate to'),
     ]
-    for bad, good in bad_phrases:
-        if bad in cleaned.lower():
-            # case-insensitive replace
-            idx = cleaned.lower().find(bad)
-            cleaned = cleaned[:idx] + good + cleaned[idx + len(bad):]
+    for pattern, replacement in bad_phrases:
+        cleaned = re.sub(pattern, replacement, cleaned, flags=re.IGNORECASE)
     return cleaned
 
 
@@ -175,7 +172,7 @@ def safety_refusal(reason: str) -> str:
             "and they can seriously damage your health. Stick to training, "
             "sleep, and real food."
         )
-    if reason == 'medical':
+    if reason == 'medical' or reason == 'medical_diagnosis':
         return (
             f"{MEDICAL_DISCLAIMER} If you're worried about a symptom or a "
             "condition, please see a doctor."

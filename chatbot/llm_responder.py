@@ -3,11 +3,15 @@
 Falls back silently to None so the caller can use the rule-based system instead.
 """
 
+import logging
+
 from openai import OpenAI
 from django.conf import settings
 
+logger = logging.getLogger('chatbot')
 
-def get_llm_response(user_input: str, user=None) -> str | None:
+
+def get_llm_response(user_input: str, user=None):
     """Return an AI-generated reply, or None if unavailable / error."""
     api_key = getattr(settings, 'OPENROUTER_API_KEY', '')
     if not api_key:
@@ -20,6 +24,7 @@ def get_llm_response(user_input: str, user=None) -> str | None:
         client = OpenAI(
             base_url='https://openrouter.ai/api/v1',
             api_key=api_key,
+            timeout=30.0,
         )
         response = client.chat.completions.create(
             model=model,
@@ -31,7 +36,8 @@ def get_llm_response(user_input: str, user=None) -> str | None:
             max_tokens=600,
         )
         return response.choices[0].message.content.strip()
-    except Exception:
+    except Exception as e:
+        logger.warning('LLM request failed: %s', e)
         return None
 
 

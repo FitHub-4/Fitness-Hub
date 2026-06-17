@@ -55,7 +55,38 @@
       <div class="dash-stat-icon blue">🏆</div>
       <div class="dash-stat-info">
         <span class="dash-stat-value">{{ stats.longest_streak }}</span>
-        <span class="dash-stat-label">Longest Streak (days)</span>
+        <span class="dash-stat-label">Longest Streak</span>
+      </div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon purple">📅</div>
+      <div class="dash-stat-info">
+        <span class="dash-stat-value">{{ completed_today|default:0 }}</span>
+        <span class="dash-stat-label">Today</span>
+      </div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon blue">📊</div>
+      <div class="dash-stat-info">
+        <span class="dash-stat-value">{{ weekly_completions|default:0 }}</span>
+        <span class="dash-stat-label">This Week</span>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="dash-stats">
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon purple">📅</div>
+      <div class="dash-stat-info">
+        <span class="dash-stat-value">{{ completed_today|default:0 }}</span>
+        <span class="dash-stat-label">Today</span>
+      </div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon blue">📊</div>
+      <div class="dash-stat-info">
+        <span class="dash-stat-value">{{ weekly_completions|default:0 }}</span>
+        <span class="dash-stat-label">This Week</span>
       </div>
     </div>
   </div>
@@ -151,63 +182,27 @@
     </div>
   </div>
 
-  <div class="dash-grid">
-    <div class="dash-card dash-card-full">
-      <div class="dash-card-header">
-        <div class="card-icon green">📈</div>
-        <h5>Weekly Activity</h5>
-      </div>
-      <div class="dash-card-body">
-        <div class="chart-wrap">
-          <canvas id="activityChart"></canvas>
-        </div>
-      </div>
+  {% if recent_completions %}
+  <div class="dash-card dash-card-full">
+    <div class="dash-card-header">
+      <div class="card-icon green">📋</div>
+      <h5>Recent Completions</h5>
+    </div>
+    <div class="dash-card-body">
+      <ul class="dash-recent-list">
+        {% for c in recent_completions %}
+        <li>
+          <span class="exercise-name">{{ c.exercise.name }}</span>
+          <span class="exercise-meta">
+            {% if c.reps %}{{ c.reps }} reps{% endif %}
+            {% if c.hold_time_sec %}{{ c.hold_time_sec }}s hold{% endif %}
+            &middot; {{ c.date }}
+          </span>
+        </li>
+        {% endfor %}
+      </ul>
     </div>
   </div>
+  {% endif %}
 </section>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const ctx = document.getElementById('activityChart').getContext('2d');
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
-      datasets: [{
-        label: 'Minutes',
-        data: [30, 40, 25, 50, 45, 20, 60],
-        borderColor: '#22c55e',
-        backgroundColor: 'rgba(34,197,94,0.06)',
-        borderWidth: 2,
-        tension: 0.35,
-        pointBackgroundColor: '#22c55e',
-        pointBorderColor: '#0f172a',
-        pointBorderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        fill: true,
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-      },
-      scales: {
-        x: {
-          grid: { color: 'rgba(255,255,255,0.03)' },
-          ticks: { color: '#94a3b8', font: { size: 11 } },
-        },
-        y: {
-          grid: { color: 'rgba(255,255,255,0.03)' },
-          ticks: { color: '#94a3b8', font: { size: 11 } },
-          beginAtZero: true,
-        }
-      }
-    }
-  });
-});
-</script>
 {% endblock %}

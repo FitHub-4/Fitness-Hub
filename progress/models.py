@@ -37,26 +37,30 @@ class UserWorkoutStats(models.Model):
     def __str__(self):
         return f"{self.user.username} — Total: {self.total_workouts}, Streak: {self.current_streak}"
 
-    def update_streak(self):
-        """Update user streak based on last workout date."""
-        from exercises.models import ExerciseCompletion
-        if not self.last_workout_date:
-            return
-
+    def update_streak(self, last_workout_date=None):
+        """Update user streak based on last workout date.
+        
+        Pass last_workout_date BEFORE it was updated to today to correctly
+        detect gaps between workout sessions.
+        """
+        actual_last_date = last_workout_date or self.last_workout_date
         today = timezone.now().date()
-        days_since_last = (today - self.last_workout_date).days
 
-        if days_since_last == 0:
-            # Workout today, continue or start streak
-            self.current_streak += 1
-        elif days_since_last == 1:
-            # Workout yesterday, continue streak
+        if not actual_last_date:
+            self.last_workout_date = today
+            self.current_streak = 1
+            if self.longest_streak < 1:
+                self.longest_streak = 1
+            self.save()
+            return
+        self.last_workout_date = today
+        days_since_last = (today - actual_last_date).days
+
+        if days_since_last <= 1:
             self.current_streak += 1
         else:
-            # Streak broken, reset
             self.current_streak = 1
 
-        # Update longest streak
         if self.current_streak > self.longest_streak:
             self.longest_streak = self.current_streak
 

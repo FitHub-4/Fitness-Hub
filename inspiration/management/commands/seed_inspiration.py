@@ -1135,13 +1135,14 @@ class Command(BaseCommand):
         # 2. Icons
         icon_map: dict = {}
         for data in ICONS:
-            cat_slug = data.pop('category_slug')
-            data['category'] = cat_map[cat_slug]
+            cat_slug = data.get('category_slug')
+            data_copy = {k: v for k, v in data.items() if k != 'category_slug'}
+            data_copy['category'] = cat_map[cat_slug]
             _, created = FitnessIcon.objects.update_or_create(
-                slug=data['slug'],
-                defaults=data,
+                slug=data_copy['slug'],
+                defaults=data_copy,
             )
-            icon_map[data['slug']] = FitnessIcon.objects.get(slug=data['slug'])
+            icon_map[data_copy['slug']] = FitnessIcon.objects.get(slug=data_copy['slug'])
         self.stdout.write(self.style.SUCCESS(
             f'  + {len(icon_map)} fitness icons ready'
         ))

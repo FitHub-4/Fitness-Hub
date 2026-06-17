@@ -5,13 +5,17 @@ Provides a full-page chat (`/chatbot/`) and a JSON API endpoint
 """
 
 import json
+import logging
 
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.csrf import csrf_exempt
 
 from .models import ChatSession, ChatMessage
 from . import responder
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -50,24 +54,22 @@ def chat_page(request):
     })
 
 
+@csrf_exempt
 @require_POST
 def chat_api(request):
     """Accept JSON `{message: "..."}` and return JSON `{reply, intent, refused, reason, suggestions}`."""
     try:
-        payload = json.loads(request.body.decode('utf-8') or '{}')
+        payload = json.loads(request.body or '{}')
     except (ValueError, UnicodeDecodeError):
         return HttpResponseBadRequest('invalid json')
 
     text = (payload.get('message') or '').strip()
     session = _get_or_create_session(request)
-
-    # Log the user message
-    if text:
-        ChatMessage.objects.create(session=session, role='user', content=text)
-
     result = responder.respond(text, user=request.user)
 
-    # Log the bot reply (skip if empty input and a refusal went through)
+    # Log user message and bot reply
+    if text:
+        ChatMessage.objects.create(session=session, role='user', content=text)
     ChatMessage.objects.create(
         session=session,
         role='bot',

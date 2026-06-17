@@ -82,6 +82,7 @@ class StyledPasswordChangeForm(PasswordChangeForm):
 
 
 class UserRegistrationForm(UserCreationForm):
+    email = forms.EmailField(required=True, label='Email address')
     age = forms.IntegerField(required=True, min_value=1, label='Age')
     height_ft = forms.DecimalField(
         required=True,
@@ -96,7 +97,14 @@ class UserRegistrationForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ('username', 'password1', 'password2')
+        fields = ('username', 'email', 'password1', 'password2')
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data['email']
+        if commit:
+            user.save()
+        return user
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

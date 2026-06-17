@@ -8,16 +8,19 @@
   {% include 'store/partials/store_nav.html' %}
   <div class="store-hero">
     <div class="store-hero-content">
-      <p class="eyebrow"><span class="icon-inline">🛒</span> Fitness Hub Store</p>
+      <p class="eyebrow">Fitness Hub Store</p>
       <h1>Gear up. Fuel up. Perform.</h1>
       <p class="hero-text">Curated apparel, equipment, and supplements chosen by coaches to support every stage of your training.</p>
-      <form class="store-search" method="get" action="{% url 'store-product-list' %}">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-        <input type="search" name="q" placeholder="Search products, brands, categories...">
-        <button type="submit" class="btn btn-primary">Search</button>
-      </form>
+      <div class="store-hero-actions">
+        <form class="store-search" method="get" action="{% url 'store-product-list' %}">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="search" name="q" placeholder="Search products, brands, categories...">
+          <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+        {% include 'store/partials/cart_badge.html' %}
+      </div>
     </div>
   </div>
 

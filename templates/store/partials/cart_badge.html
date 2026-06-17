@@ -1,0 +1,10 @@
+<a href="{% url 'view-cart' %}" class="store-cart-link" title="Shopping Cart" aria-label="Shopping cart" data-count="{{ cart_count|default:0 }}">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+    <line x1="3" y1="6" x2="21" y2="6"/>
+    <circle cx="9" cy="21" r="1.5"/>
+    <circle cx="15" cy="21" r="1.5"/>
+  </svg>
+  <span class="store-cart-label">Cart</span>
+  {% if cart_count > 0 %}<span class="store-cart-count">{{ cart_count }}</span>{% endif %}
+</a>

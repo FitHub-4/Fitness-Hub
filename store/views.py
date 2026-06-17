@@ -1,13 +1,19 @@
+import logging
+
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q, Avg, Count
+from django.db.models import Q, Avg, Count, F
+from django.db import transaction
 from django.core.paginator import Paginator
+from django.views.decorators.http import require_POST, require_http_methods
 
 from .models import Category, Product, Order, OrderItem
 from .cart_utils import get_or_create_cart
 from .forms import CheckoutForm
+
+logger = logging.getLogger(__name__)
 
 
 SORT_CHOICES = {
@@ -104,6 +110,7 @@ def product_detail(request, slug):
     })
 
 
+@require_POST
 def add_to_cart(request, slug):
     product = get_object_or_404(Product, slug=slug, is_active=True)
     cart = get_or_create_cart(request)
@@ -127,7 +134,16 @@ def add_to_cart(request, slug):
 
 def view_cart(request):
     cart = get_or_create_cart(request)
-    return render(request, 'store/cart.html', {'cart': cart})
+    subtotal = cart.subtotal()
+    free_threshold = 5000
+    free_shipping_remaining = max(0, free_threshold - subtotal)
+    free_shipping_pct = min(100, int(subtotal / free_threshold * 100)) if subtotal > 0 else 0
+    return render(request, 'store/cart.html', {
+        'cart': cart,
+        'free_shipping_threshold': free_threshold,
+        'free_shipping_remaining': free_shipping_remaining,
+        'free_shipping_pct': free_shipping_pct,
+    })
 
 
 def update_cart(request, item_id):
@@ -158,6 +174,7 @@ def remove_from_cart(request, item_id):
 
 
 @login_required
+@require_http_methods(['GET', 'POST'])
 def checkout(request):
     cart = get_or_create_cart(request)
     if cart.is_empty():
@@ -175,18 +192,29 @@ def checkout(request):
             order.total = cart.total()
             order.save()
 
-            for item in cart.items.select_related('product'):
-                OrderItem.objects.create(
-                    order=order,
-                    product=item.product,
-                    product_name=item.product.name,
-                    product_price=item.product.price,
-                    quantity=item.quantity,
-                )
-                item.product.stock = max(0, item.product.stock - item.quantity)
-                item.product.save()
+            with transaction.atomic():
+                for item in cart.items.select_related('product'):
+                    # Atomic stock reduction
+                    updated = Product.objects.filter(
+                        pk=item.product.pk, stock__gte=item.quantity
+                    ).update(stock=F('stock') - item.quantity)
+                    if updated == 0:
+                        logger.warning(
+                            'Insufficient stock for product %s (qty %d)',
+                            item.product.name, item.quantity,
+                        )
+                        raise ValueError(f"Insufficient stock for {item.product.name}")
 
-            cart.items.all().delete()
+                    OrderItem.objects.create(
+                        order=order,
+                        product=item.product,
+                        product_name=item.product.name,
+                        product_price=item.product.price,
+                        quantity=item.quantity,
+                    )
+
+                cart.items.all().delete()
+
             messages.success(request, f'Order {order.order_number} placed successfully!')
             return redirect('order-detail', order_number=order.order_number)
     else:
@@ -212,6 +240,7 @@ def order_history(request):
 @login_required
 def order_detail(request, order_number):
     order = get_object_or_404(
-        Order, order_number=order_number, user=request.user,
+        Order.objects.prefetch_related('items__product'),
+        order_number=order_number, user=request.user,
     )
     return render(request, 'store/order_detail.html', {'order': order})

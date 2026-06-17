@@ -1,0 +1,35 @@
+{% extends 'layout/base.html' %}
+{% load static %}
+{% block content %}
+<section class="container py-5">
+  <div class="page-head">
+    <div class="page-head-text">
+      <span class="icon-badge is-amber">🏆</span>
+      <div>
+        <h1>Achievements</h1>
+        <p class="lead">{{ total_unlocked }}/{{ total_count }} unlocked &middot; Keep pushing!</p>
+      </div>
+    </div>
+  </div>
+
+  {% for category, achievements in achievements_by_category.items %}
+  <div style="margin-bottom: 2.5rem;">
+    <h2 style="margin-bottom: 1rem;">{{ category }}</h2>
+    <div class="achievement-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;">
+      {% for item in achievements %}
+      <div class="achievement-card glass-card{% if item.unlocked %} unlocked{% else %} locked{% endif %}" style="padding: 1.25rem; text-align: center; opacity: {% if item.unlocked %}1{% else %}0.5{% endif %}; transition: opacity 0.3s;">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">{{ item.achievement.icon }}</div>
+        <h3 style="margin: 0.25rem 0; font-size: 1rem;">{{ item.achievement.name }}</h3>
+        <p style="font-size: 0.85rem; color: var(--text-dim); margin: 0.25rem 0;">{{ item.achievement.description }}</p>
+        {% if item.unlocked %}
+        <span style="font-size: 0.75rem; color: var(--success);">✓ Unlocked</span>
+        {% else %}
+        <span style="font-size: 0.75rem; color: var(--text-dim);">🔒 {{ item.achievement.threshold }}</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}

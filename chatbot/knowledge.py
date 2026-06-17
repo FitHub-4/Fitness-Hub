@@ -239,15 +239,11 @@ GENERAL_FITNESS_FAQ = [
 
 def get_exercise_by_name(name: str):
     from exercises.models import Exercise
-    qs = Exercise.objects.all()
     name_l = name.lower()
-    for ex in qs:
-        if ex.name.lower() == name_l:
-            return ex
-    for ex in qs:
-        if name_l in ex.name.lower() or ex.name.lower() in name_l:
-            return ex
-    return None
+    ex = Exercise.objects.filter(name__iexact=name_l).first()
+    if ex:
+        return ex
+    return Exercise.objects.filter(name__icontains=name_l).first()
 
 
 def search_exercises(query: str, limit: int = 5):
@@ -256,12 +252,13 @@ def search_exercises(query: str, limit: int = 5):
     q = (query or '').lower().strip()
     if not q:
         return []
-    # Strip punctuation from each token so "push-up?" matches "push-up".
     words = []
     for w in q.split():
         clean = re.sub(r'[^a-z0-9\'-]', '', w)
         if len(clean) >= 3:
             words.append(clean)
+    if not words:
+        return []
     qs = Exercise.objects.all()
     scored = []
     for ex in qs:
