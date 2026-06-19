@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'diet',
     'chatbot',
     'social',
+    'achievements',
     # Third Party
 
 ]
