@@ -1,0 +1,171 @@
+{% extends 'layout/base.html' %}
+{% load static %}
+{% block content %}
+<section class="social-hub">
+  <header class="social-header">
+    <h1>Community</h1>
+    <p>Connect with partners, challenge rivals, and level up together.</p>
+    <div class="social-actions">
+      <a href="{% url 'social-search' %}" class="social-btn social-btn-primary">Find People</a>
+    </div>
+  </header>
+
+  <div class="social-grid">
+    <div class="social-card">
+      <h2>Training Partners <span class="badge">{{ partners|length }}</span></h2>
+      {% if partners %}
+        <ul class="social-list">
+          {% for c in partners %}
+            <li>
+              {% if c.from_user == user %}
+                <span>{{ c.to_user.username }}</span>
+                <div class="social-list-actions">
+                  <a href="{% url 'chat' username=c.to_user.username %}" class="social-btn-sm">Chat</a>
+                  <form method="post" action="{% url 'social-remove' %}" style="display:inline">{% csrf_token %}
+                    <input type="hidden" name="conn_id" value="{{ c.pk }}">
+                    <button class="social-btn-sm social-btn-danger">Remove</button>
+                  </form>
+                </div>
+              {% else %}
+                <span>{{ c.from_user.username }}</span>
+                <div class="social-list-actions">
+                  <a href="{% url 'chat' username=c.from_user.username %}" class="social-btn-sm">Chat</a>
+                  <form method="post" action="{% url 'social-remove' %}" style="display:inline">{% csrf_token %}
+                    <input type="hidden" name="conn_id" value="{{ c.pk }}">
+                    <button class="social-btn-sm social-btn-danger">Remove</button>
+                  </form>
+                </div>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="social-empty">No training partners yet. <a href="{% url 'social-search' %}">Find someone</a> to train with.</p>
+      {% endif %}
+    </div>
+
+    <div class="social-card">
+      <h2>Rivals <span class="badge">{{ rivals|length }}</span></h2>
+      {% if rivals %}
+        <ul class="social-list">
+          {% for c in rivals %}
+            <li>
+              {% if c.from_user == user %}
+                <span>{{ c.to_user.username }}</span>
+                <div class="social-list-actions">
+                  <a href="{% url 'chat' username=c.to_user.username %}" class="social-btn-sm">Trash Talk</a>
+                  <form method="post" action="{% url 'social-remove' %}" style="display:inline">{% csrf_token %}
+                    <input type="hidden" name="conn_id" value="{{ c.pk }}">
+                    <button class="social-btn-sm social-btn-danger">Remove</button>
+                  </form>
+                </div>
+              {% else %}
+                <span>{{ c.from_user.username }}</span>
+                <div class="social-list-actions">
+                  <a href="{% url 'chat' username=c.from_user.username %}" class="social-btn-sm">Trash Talk</a>
+                  <form method="post" action="{% url 'social-remove' %}" style="display:inline">{% csrf_token %}
+                    <input type="hidden" name="conn_id" value="{{ c.pk }}">
+                    <button class="social-btn-sm social-btn-danger">Remove</button>
+                  </form>
+                </div>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="social-empty">No rivals yet. <a href="{% url 'social-search' %}">Find someone</a> to compete with.</p>
+      {% endif %}
+    </div>
+
+    {% if pending_incoming %}
+      <div class="social-card social-card--alert">
+        <h2>Pending Requests</h2>
+        <ul class="social-list">
+          {% for c in pending_incoming %}
+            <li>
+              <span>{{ c.from_user.username }} wants to be your <strong>{{ c.connection_type }}</strong></span>
+              <div class="social-list-actions">
+                <form method="post" action="{% url 'social-respond' %}" style="display:inline">{% csrf_token %}
+                  <input type="hidden" name="conn_id" value="{{ c.pk }}">
+                  <input type="hidden" name="action" value="accept">
+                  <button class="social-btn-sm social-btn-accept">Accept</button>
+                </form>
+                <form method="post" action="{% url 'social-respond' %}" style="display:inline">{% csrf_token %}
+                  <input type="hidden" name="conn_id" value="{{ c.pk }}">
+                  <input type="hidden" name="action" value="reject">
+                  <button class="social-btn-sm social-btn-danger">Reject</button>
+                </form>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    {% if pending_outgoing %}
+      <div class="social-card">
+        <h2>Sent Requests</h2>
+        <ul class="social-list">
+          {% for c in pending_outgoing %}
+            <li>
+              <span>Awaiting {{ c.to_user.username }}'s response ({{ c.connection_type }})</span>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  </div>
+
+  {% if conversations %}
+    <div class="social-card" style="margin-top:1.5rem">
+      <h2>Recent Conversations</h2>
+      <ul class="social-list">
+        {% for conv in conversations %}
+          <li>
+            <a href="{% url 'chat' username=conv.user.username %}" class="social-conv-link">
+              <strong>{{ conv.user.username }}</strong>
+              {% if conv.unread %}<span class="badge badge--danger">{{ conv.unread }}</span>{% endif %}
+              <span class="social-conv-preview">{{ conv.last_message }}{% if conv.last_message|length >= 80 %}...{% endif %}</span>
+              <small>{{ conv.timestamp|timesince }} ago</small>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+</section>
+
+<style>
+.social-hub { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; }
+.social-header { text-align: center; margin-bottom: 2rem; }
+.social-header h1 { font-size: 1.6rem; font-weight: 700; margin: 0 0 0.3rem; }
+.social-header p { color: var(--text-dim); margin: 0 0 1rem; }
+.social-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+.social-grid { display: grid; gap: 1rem; }
+.social-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem; }
+.social-card--alert { border-color: rgba(34, 211, 238, 0.2); background: rgba(34, 211, 238, 0.04); }
+.social-card h2 { font-size: 1rem; font-weight: 600; margin: 0 0 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+.badge { display: inline-flex; align-items: center; justify-content: center; background: var(--cyan); color: #000; font-size: 0.7rem; font-weight: 700; min-width: 1.3rem; height: 1.3rem; border-radius: 999px; padding: 0 0.3rem; }
+.badge--danger { background: var(--danger); color: #fff; }
+.social-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.social-list li { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.social-list li:last-child { border-bottom: none; }
+.social-list-actions { display: flex; gap: 0.4rem; }
+.social-btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.1rem; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.85rem; text-decoration: none; border: none; cursor: pointer; transition: background 0.15s; font-family: inherit; }
+.social-btn-primary { background: var(--cyan); color: #000; }
+.social-btn-primary:hover { background: #1ac4d9; }
+.social-btn-sm { display: inline-flex; align-items: center; padding: 0.3rem 0.65rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600; text-decoration: none; border: none; cursor: pointer; transition: background 0.15s; font-family: inherit; background: rgba(255,255,255,0.06); color: var(--text); }
+.social-btn-sm:hover { background: rgba(255,255,255,0.12); }
+.social-btn-accept { background: #16a34a; color: #fff; }
+.social-btn-accept:hover { background: #15803d; }
+.social-btn-danger { background: rgba(239,68,68,0.12); color: #fca5a5; }
+.social-btn-danger:hover { background: rgba(239,68,68,0.2); }
+.social-empty { font-size: 0.88rem; color: var(--text-dim); margin: 0.5rem 0; }
+.social-empty a { color: var(--cyan); }
+.social-conv-link { display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: var(--text); flex-wrap: wrap; }
+.social-conv-link:hover { opacity: 0.85; }
+.social-conv-preview { color: var(--text-dim); font-size: 0.8rem; flex: 1; min-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.social-conv-link small { color: var(--text-mute); font-size: 0.72rem; }
+@media (max-width:540px){.social-list li{flex-direction:column;align-items:flex-start}}
+</style>
+{% endblock %}

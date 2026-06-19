@@ -1,0 +1,65 @@
+{% extends 'layout/base.html' %}
+{% load static %}
+{% block content %}
+<section class="social-hub">
+  <header class="social-header">
+    <h1>Find People</h1>
+    <p>Search for training partners or rivals by username or email.</p>
+    <form method="get" class="social-search-form">
+      <input type="text" name="q" value="{{ query }}" placeholder="Search username or email..." class="social-search-input" autofocus>
+      <button type="submit" class="social-btn social-btn-primary">Search</button>
+    </form>
+    <a href="{% url 'social-hub' %}" class="social-btn-sm" style="margin-top:0.5rem;display:inline-flex">&larr; Back to Community</a>
+  </header>
+
+  {% if query and not results %}
+    <div class="social-card" style="text-align:center;padding:2rem">
+      <p class="social-empty">No users found matching "{{ query }}".</p>
+    </div>
+  {% endif %}
+
+  {% if results %}
+    <div class="social-card">
+      <h2 style="margin-bottom:0.75rem">Results for "{{ query }}"</h2>
+      <ul class="social-list">
+        {% for u in results %}
+          <li>
+            <span>
+              <strong>{{ u.username }}</strong>
+              {% if u.profile.bio %}<br><small>{{ u.profile.bio|truncatewords:15 }}</small>{% endif %}
+            </span>
+            <div class="social-list-actions">
+              {% with key=u.pk|stringformat:"s" %}
+                {% if key|add:":partner" in existing %}
+                  <span class="social-btn-sm" style="opacity:0.5">Partner requested</span>
+                {% elif key|add:":rival" in existing %}
+                  <span class="social-btn-sm" style="opacity:0.5">Rival requested</span>
+                {% else %}
+                  <form method="post" action="{% url 'social-send' %}" style="display:inline">{% csrf_token %}
+                    <input type="hidden" name="user_id" value="{{ u.pk }}">
+                    <input type="hidden" name="type" value="partner">
+                    <button class="social-btn-sm social-btn-accept">+ Partner</button>
+                  </form>
+                  <form method="post" action="{% url 'social-send' %}" style="display:inline">{% csrf_token %}
+                    <input type="hidden" name="user_id" value="{{ u.pk }}">
+                    <input type="hidden" name="type" value="rival">
+                    <button class="social-btn-sm" style="background:rgba(251,146,60,0.15);color:#fb923c">+ Rival</button>
+                  </form>
+                {% endif %}
+              {% endwith %}
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+</section>
+
+<style>
+.social-search-form { display: flex; gap: 0.5rem; max-width: 420px; margin: 0 auto; }
+.social-search-input { flex: 1; background: rgba(3,7,18,0.5); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.65rem 0.9rem; font-size: 0.9rem; font-family: inherit; }
+.social-search-input:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(34,211,238,0.12); }
+.social-search-input::placeholder { color: rgba(255,255,255,0.25); }
+@media (max-width:440px){.social-search-form{flex-direction:column}}
+</style>
+{% endblock %}

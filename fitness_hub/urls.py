@@ -14,6 +14,7 @@ urlpatterns = [
     path('diet/', include('diet.urls')),
     path('inspiration/', include('inspiration.urls')),
     path('chatbot/', include('chatbot.urls')),
+    path('social/', include('social.urls')),
 ]
 
 # Serve media files during development

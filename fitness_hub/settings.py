@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'inspiration',
     'diet',
     'chatbot',
+    'social',
     # Third Party
 
 ]

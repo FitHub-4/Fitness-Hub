@@ -1,11 +1,26 @@
 from django import forms
 from django.contrib.auth import password_validation
 from django.contrib.auth.forms import (
+    AuthenticationForm,
     PasswordChangeForm,
     UserCreationForm,
 )
 from django.contrib.auth.models import User
 from .models import Profile
+
+
+class StyledAuthenticationForm(AuthenticationForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].widget.attrs.update({
+            'placeholder': 'Username or email',
+            'autocomplete': 'username',
+            'autofocus': True,
+        })
+        self.fields['password'].widget.attrs.update({
+            'placeholder': 'Enter your password',
+            'autocomplete': 'current-password',
+        })
 
 
 USERNAME_HELP = (
@@ -75,13 +90,38 @@ class UserRegistrationForm(UserCreationForm):
         min_value=1.0,
         max_value=9.0,
         label='Height (ft)',
-        help_text='Enter your height in feet, e.g. 5.83 = 5 ft 10 in.',
+        help_text='e.g. 5.83 = 5 ft 10 in',
     )
     weight_kg = forms.DecimalField(required=True, max_digits=6, decimal_places=2, label='Weight (kg)')
 
     class Meta:
         model = User
         fields = ('username', 'password1', 'password2')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].widget.attrs.update({
+            'placeholder': 'Choose a username',
+            'autocomplete': 'username',
+            'autofocus': True,
+        })
+        self.fields['password1'].widget.attrs.update({
+            'placeholder': 'Create a password',
+            'autocomplete': 'new-password',
+        })
+        self.fields['password2'].widget.attrs.update({
+            'placeholder': 'Confirm your password',
+            'autocomplete': 'new-password',
+        })
+        self.fields['age'].widget.attrs.update({
+            'placeholder': 'e.g. 25',
+        })
+        self.fields['height_ft'].widget.attrs.update({
+            'placeholder': 'e.g. 5.83',
+        })
+        self.fields['weight_kg'].widget.attrs.update({
+            'placeholder': 'e.g. 70',
+        })
 
 
 class UserUpdateForm(forms.ModelForm):

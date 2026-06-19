@@ -1,93 +1,72 @@
 {% extends 'layout/base.html' %}
 {% load static %}
 {% block content %}
-<section class="auth-page">
-  <aside class="auth-side">
-    <div class="auth-side-inner">
-      <a class="brand" href="{% url 'home' %}" style="margin-bottom:0.5rem;">
-        <img src="{% static 'images/Logo.jpg' %}" alt="Fitness Hub" class="brand-logo">
+<section class="auth-fb">
+  <div class="auth-fb-card auth-fb-card--wide">
+    <div class="auth-fb-header">
+      <a href="{% url 'home' %}">
+        <img src="{% static 'images/Logo.jpg' %}" alt="Fitness Hub" class="auth-fb-logo">
       </a>
-      <span class="eyebrow">Create your account</span>
-      <h1>Two minutes now, better training forever.</h1>
-      <p>Set up a profile, pick a goal, and the portal will tune itself to what you're trying to do.</p>
-
-      <div class="auth-side-stats">
-        <div class="auth-side-stat">
-          <div class="auth-side-stat-num">Free</div>
-          <div class="auth-side-stat-label">Personal use</div>
-        </div>
-        <div class="auth-side-stat">
-          <div class="auth-side-stat-num">2 min</div>
-          <div class="auth-side-stat-label">To set up</div>
-        </div>
-        <div class="auth-side-stat">
-          <div class="auth-side-stat-num">6</div>
-          <div class="auth-side-stat-label">Goal types</div>
-        </div>
-      </div>
-
-      <div class="auth-side-quote">
-        “The pain you feel today is the strength you feel tomorrow.”
-        <span class="auth-side-quote-author">— Arnold Schwarzenegger</span>
-      </div>
+      <h1>Create your account</h1>
+      <p>It's quick and easy — just a few details to get started.</p>
     </div>
-  </aside>
 
-  <div class="auth-form-side">
-    <div class="auth-form-inner">
-      <h2>Create your account</h2>
-      <p class="auth-sub">Username, password, and a few quick stats so we can tailor the portal to you.</p>
+    {% if form.errors %}
+      <div class="auth-fb-alert">Please correct the errors below.</div>
+    {% endif %}
 
-      {% if form.errors %}
-        <div class="alert alert-error">Please correct the fields below.</div>
-      {% endif %}
-
-      <form method="post" novalidate>
-        {% csrf_token %}
-        <div class="form-group">
-          <label for="id_username">Username</label>
-          {{ form.username }}
-          {% if form.username.help_text %}<p class="help-text">{{ form.username.help_text }}</p>{% endif %}
-          {{ form.username.errors }}
-        </div>
-        <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
-          <div class="form-group">
-            <label for="id_password1">Password</label>
+    <form method="post" novalidate class="auth-fb-form">
+      {% csrf_token %}
+      <div class="auth-fb-field">
+        {{ form.username }}
+      </div>
+      <div class="auth-fb-row">
+        <div class="auth-fb-field">
+          <div class="password-wrap">
             {{ form.password1 }}
-            {% if form.password1.help_text %}<p class="help-text">{{ form.password1.help_text|safe }}</p>{% endif %}
-            {{ form.password1.errors }}
+            <button type="button" class="password-toggle" onclick="togglePassword(this)" aria-label="Toggle password visibility" tabindex="-1">
+              <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
           </div>
-          <div class="form-group">
-            <label for="id_password2">Confirm</label>
+        </div>
+        <div class="auth-fb-field">
+          <div class="password-wrap">
             {{ form.password2 }}
-            {{ form.password2.errors }}
+            <button type="button" class="password-toggle" onclick="togglePassword(this)" aria-label="Toggle password visibility" tabindex="-1">
+              <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
           </div>
         </div>
-        <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.75rem;">
-          <div class="form-group">
-            <label for="id_age">Age</label>
-            {{ form.age }}
-            {{ form.age.errors }}
-          </div>
-          <div class="form-group">
-            <label for="id_height_ft">Height (ft)</label>
-            {{ form.height_ft }}
-            {% if form.height_ft.help_text %}<small class="form-help">{{ form.height_ft.help_text }}</small>{% endif %}
-            {{ form.height_ft.errors }}
-          </div>
-          <div class="form-group">
-            <label for="id_weight_kg">Weight (kg)</label>
-            {{ form.weight_kg }}
-            {{ form.weight_kg.errors }}
-          </div>
+      </div>
+      <div class="auth-fb-row auth-fb-row--3">
+        <div class="auth-fb-field">
+          {{ form.age }}
         </div>
-        <button class="button button-primary button-block button-lg" type="submit">Create account</button>
-      </form>
+        <div class="auth-fb-field">
+          {{ form.height_ft }}
+        </div>
+        <div class="auth-fb-field">
+          {{ form.weight_kg }}
+        </div>
+      </div>
+      <button class="auth-fb-btn auth-fb-btn-primary" type="submit">Create account</button>
+    </form>
 
-      <div class="form-divider">or</div>
+    <div class="auth-fb-divider"><span>or</span></div>
 
-      <p class="auth-help">Already have an account? <a href="{% url 'login' %}">Sign in</a></p>
-    </div>
+    <p class="auth-fb-footer">Already have an account? <a href="{% url 'login' %}">Sign in</a></p>
   </div>
 </section>
+
+<script>
+function togglePassword(btn) {
+  const input = btn.parentElement.querySelector('input');
+  const isPassword = input.type === 'password';
+  input.type = isPassword ? 'text' : 'password';
+  btn.querySelector('.eye-open').style.display = isPassword ? 'none' : '';
+  btn.querySelector('.eye-closed').style.display = isPassword ? '' : 'none';
+}
+</script>
 {% endblock %}

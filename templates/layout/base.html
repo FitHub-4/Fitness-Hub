@@ -37,6 +37,7 @@
                     <a href="{% url 'diet' %}" class="{% if 'diet' in request.resolver_match.url_name %}is-active{% endif %}">Diet</a>
                     <a href="{% url 'store-home' %}" class="{% if 'store' in request.resolver_match.url_name or 'product' in request.resolver_match.url_name or 'order' in request.resolver_match.url_name or 'cart' in request.resolver_match.url_name or 'checkout' in request.resolver_match.url_name %}is-active{% endif %}">Store</a>
                     <a href="{% url 'inspiration-feed' %}" class="{% if 'inspiration' in request.resolver_match.url_name %}is-active{% endif %}">Inspiration</a>
+                    <a href="{% url 'social-hub' %}" class="{% if 'social' in request.resolver_match.url_name or 'chat' in request.resolver_match.url_name %}is-active{% endif %}">Community</a>
                     <div class="nav-dropdown">
                         <button class="nav-dropdown__trigger" aria-haspopup="true" aria-expanded="false" aria-label="User menu">
                             <svg class="nav-kebab" width="20" height="20" viewBox="0 0 20 20" fill="none">
