@@ -10,7 +10,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/jpeg" href="{% static 'images/Logo.jpg' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% if user.is_authenticated %}
     <link rel="stylesheet" href="{% static 'chatbot/css/chat.css' %}">
+    {% endif %}
     <meta name="csrf-token" content="{{ csrf_token }}">
     {% block extra_head %}{% endblock %}
     <script defer src="{% static 'js/script.js' %}"></script>
@@ -100,6 +102,8 @@
         </div>
     </footer>
 
+    {% if user.is_authenticated %}
     <script defer src="{% static 'chatbot/js/chat.js' %}"></script>
+    {% endif %}
 </body>
 </html>

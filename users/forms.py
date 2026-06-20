@@ -1,5 +1,4 @@
 from django import forms
-from django.contrib.auth import password_validation
 from django.contrib.auth.forms import (
     AuthenticationForm,
     PasswordChangeForm,
@@ -18,7 +17,7 @@ class StyledAuthenticationForm(AuthenticationForm):
             'autofocus': True,
         })
         self.fields['password'].widget.attrs.update({
-            'placeholder': 'Enter your password',
+            'placeholder': 'Password',
             'autocomplete': 'current-password',
         })
 
@@ -99,6 +98,19 @@ class UserRegistrationForm(UserCreationForm):
         model = User
         fields = ('username', 'email', 'password1', 'password2')
 
+    def clean_password1(self):
+        return self.cleaned_data.get('password1', '')
+
+    def clean_password2(self):
+        password1 = self.cleaned_data.get('password1')
+        password2 = self.cleaned_data.get('password2')
+        if password1 and password2 and password1 != password2:
+            raise forms.ValidationError('The two password fields didn\'t match.')
+        return password2
+
+    def _post_clean(self):
+        forms.ModelForm._post_clean(self)
+
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data['email']
@@ -109,26 +121,32 @@ class UserRegistrationForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['username'].widget.attrs.update({
-            'placeholder': 'Choose a username',
+            'placeholder': 'Username',
             'autocomplete': 'username',
             'autofocus': True,
         })
+        self.fields['email'].widget.attrs.update({
+            'placeholder': 'Email address',
+            'autocomplete': 'email',
+        })
+        self.fields['password1'].validators = []
+        self.fields['password1'].help_text = ''
         self.fields['password1'].widget.attrs.update({
-            'placeholder': 'Create a password',
+            'placeholder': 'Password',
             'autocomplete': 'new-password',
         })
         self.fields['password2'].widget.attrs.update({
-            'placeholder': 'Confirm your password',
+            'placeholder': 'Confirm password',
             'autocomplete': 'new-password',
         })
         self.fields['age'].widget.attrs.update({
-            'placeholder': 'e.g. 25',
+            'placeholder': 'Age (e.g. 25)',
         })
         self.fields['height_ft'].widget.attrs.update({
-            'placeholder': 'e.g. 5.83',
+            'placeholder': 'Height (ft) e.g. 5.83',
         })
         self.fields['weight_kg'].widget.attrs.update({
-            'placeholder': 'e.g. 70',
+            'placeholder': 'Weight (kg) e.g. 70',
         })
 
 

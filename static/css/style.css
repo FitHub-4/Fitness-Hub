@@ -1395,6 +1395,7 @@ main { min-height: calc(100vh - var(--header-h) - 220px); }
   list-style: none;
   padding: 0;
 }
+
 .password-wrap {
   position: relative;
 }
