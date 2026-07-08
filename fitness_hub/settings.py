@@ -14,6 +14,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
 
 INSTALLED_APPS = [
+    'fitness_hub.apps.FitnessHubConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
