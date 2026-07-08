@@ -1,4 +1,4 @@
-"""Optional LLM-powered responder via OpenRouter (OpenAI-compatible API).
+"""Optional LLM-powered responder via OpenAI or OpenRouter.
 
 Falls back silently to None so the caller can use the rule-based system instead.
 """
@@ -13,28 +13,52 @@ logger = logging.getLogger('chatbot')
 
 def get_llm_response(user_input: str, user=None):
     """Return an AI-generated reply, or None if unavailable / error."""
-    api_key = getattr(settings, 'OPENROUTER_API_KEY', '')
-    if not api_key:
+    openai_api_key = getattr(settings, 'OPENAI_API_KEY', '')
+    openai_model = getattr(settings, 'OPENAI_MODEL', 'gpt-4o-mini')
+    openrouter_api_key = getattr(settings, 'OPENROUTER_API_KEY', '')
+    openrouter_model = getattr(settings, 'OPENROUTER_MODEL', 'openai/gpt-4o-mini')
+
+    if openai_api_key:
+        provider = 'openai'
+        api_key = openai_api_key
+        model = openai_model
+    elif openrouter_api_key:
+        provider = 'openrouter'
+        api_key = openrouter_api_key
+        model = openrouter_model
+    else:
         return None
 
-    model = getattr(settings, 'OPENROUTER_MODEL', 'openai/gpt-4o-mini')
     system_prompt = _build_system_prompt(user)
 
     try:
-        client = OpenAI(
-            base_url='https://openrouter.ai/api/v1',
-            api_key=api_key,
-            timeout=30.0,
-        )
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {'role': 'system', 'content': system_prompt},
-                {'role': 'user', 'content': user_input},
-            ],
-            temperature=0.7,
-            max_tokens=600,
-        )
+        if provider == 'openai':
+            client = OpenAI(api_key=api_key)
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {'role': 'system', 'content': system_prompt},
+                    {'role': 'user', 'content': user_input},
+                ],
+                temperature=0.7,
+                max_tokens=600,
+            )
+        else:
+            client = OpenAI(
+                base_url='https://openrouter.ai/api/v1',
+                api_key=api_key,
+                timeout=30.0,
+            )
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {'role': 'system', 'content': system_prompt},
+                    {'role': 'user', 'content': user_input},
+                ],
+                temperature=0.7,
+                max_tokens=600,
+            )
+
         return response.choices[0].message.content.strip()
     except Exception as e:
         logger.warning('LLM request failed: %s', e)
@@ -55,18 +79,17 @@ def _build_system_prompt(user) -> str:
     features_str = '\n'.join(features_lines)
 
     return (
-        f"You are the Fitness Hub Coach — a helpful fitness assistant for the "
-        f"Fitness Hub workout application. "
-        f"{'The user is ' + name + '.' if name else 'The user is not signed in.'}\n\n"
-        f"App features:\n{features_str}\n\n"
-        f"Rules:\n"
-        f"- Keep responses concise (2-5 sentences).\n"
-        f"- You can use **bold** for emphasis.\n"
-        f"- Never give medical diagnoses or prescribe medication.\n"
-        f"- Always encourage safe exercise practices.\n"
-        f"- If asked about something outside fitness/nutrition/app-help, politely decline.\n"
-        f"- Do not mention that you are an AI or LLM.\n"
-        f"- Do not mention specific pricing or unavailable features.\n"
-        f"- Guide users to /users/settings/ for account/password changes.\n"
-        f"- For exercise technique, give brief form cues and safety notes."
+        "You are 'Codex Coach,' an elite, certified AI Fitness & Nutrition Expert built for the Fitness Hub platform. "
+        "Your goal is to provide highly accurate, professional, encouraging, and scientifically backed answers regarding exercises, workouts, and nutrition.\n\n"
+        "CRITICAL INSTRUCTIONS FOR REPLIES:\n"
+        "1. EXERCISE ACCURACY: When a user asks about an exercise, detail the target muscle groups, correct form, safety tips, and common mistakes to avoid. "
+        "If the exercise exists in our platform's seeded library, enthusiastically guide them on how to utilize it.\n"
+        "2. TAILORED & CONTEXTUAL: Never say 'I could not find the exact answer.' If a question is broad, ask intelligent clarifying questions (e.g., fitness level, equipment access) to tailor your advice like a real personal trainer.\n"
+        "3. TONAL ARCHITECTURE: Sound like an elite human coach—knowledgeable, motivating, direct, and professional. Avoid sounding mechanical or overly robotic. Use formatting (bullet points, bold text) to make your advice scannable.\n"
+        "4. SAFETY GUARDRAILS: Always include a brief, professional medical disclaimer if a user asks about recovering from injuries or executing high-risk movements (e.g., 'Always consult a physician before attempting heavy lifts if you have a history of back issues.').\n"
+        "5. SCOPE: Gently guide the user back to fitness, health, habit-building, and nutrition if they attempt to ask about unrelated topics (e.g., coding, politics, celebrity gossip).\n\n"
+        f"The user is {'signed in as ' + name if name else 'not signed in'}.\n\n"
+        "App features:\n"
+        f"{features_str}\n\n"
+        "When possible, mention relevant Fitness Hub sections and keep responses focused on the user's request."
     )

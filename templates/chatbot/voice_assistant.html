@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice Assistant</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 24px; max-width: 700px; margin: 0 auto; }
+    button { padding: 12px 18px; font-size: 16px; border: 0; border-radius: 8px; cursor: pointer; margin-top: 12px; }
+    .recording { background: #dc2626; color: white; }
+    .idle { background: #2563eb; color: white; }
+    .processing { background: #f59e0b; color: white; }
+    .status { margin-top: 12px; font-weight: bold; }
+    audio { margin-top: 16px; width: 100%; }
+  </style>
+</head>
+<body>
+  <h1>Fitness Hub Voice Assistant</h1>
+  <p>Click the button, speak your fitness or nutrition question, and hear the assistant respond.</p>
+  <button id="voiceBtn" class="idle">Click to Speak</button>
+  <div id="status" class="status">Ready</div>
+  <audio id="audioPlayer" controls></audio>
+
+  <script>
+    const button = document.getElementById('voiceBtn');
+    const status = document.getElementById('status');
+    const audioPlayer = document.getElementById('audioPlayer');
+    let mediaRecorder;
+    let chunks = [];
+    let stream;
+
+    async function startRecording() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp3';
+        mediaRecorder = new MediaRecorder(stream, { mimeType });
+        chunks = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) chunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+          const blob = new Blob(chunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+          const formData = new FormData();
+          formData.append('audio', blob, 'recording.webm');
+
+          button.disabled = true;
+          button.textContent = 'Processing...';
+          button.className = 'processing';
+          status.textContent = 'Processing your voice...';
+
+          try {
+            const response = await fetch('/chatbot/voice/', {
+              method: 'POST',
+              body: formData,
+            });
+
+            const contentType = response.headers.get('content-type') || '';
+            if (contentType.includes('audio/')) {
+              const audioBlob = await response.blob();
+              const audioUrl = URL.createObjectURL(audioBlob);
+              audioPlayer.src = audioUrl;
+              audioPlayer.play().catch(() => {});
+              status.textContent = 'Playing response...';
+            } else {
+              const data = await response.json();
+              status.textContent = data.error || 'Something went wrong.';
+            }
+          } catch (err) {
+            status.textContent = 'Request failed: ' + err.message;
+          } finally {
+            button.disabled = false;
+            button.textContent = 'Click to Speak';
+            button.className = 'idle';
+            stream.getTracks().forEach(track => track.stop());
+          }
+        };
+
+        mediaRecorder.start();
+        button.textContent = 'Recording...';
+        button.className = 'recording';
+        status.textContent = 'Recording... Speak now';
+      } catch (err) {
+        status.textContent = 'Microphone access denied: ' + err.message;
+      }
+    }
+
+    button.addEventListener('click', () => {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+      } else {
+        startRecording();
+      }
+    });
+  </script>
+</body>
+</html>

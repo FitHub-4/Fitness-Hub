@@ -199,6 +199,12 @@
   padding: 0.75rem 1.2rem 1rem;
   border-top: 1px solid var(--chat-border);
   background: rgba(0, 0, 0, 0.15);
+  align-items: center;
+}
+
+.chat-form__input-wrap {
+  flex: 1 1 auto;
+  display: flex;
 }
 
 .chat-form input {
@@ -222,21 +228,93 @@
   color: var(--chat-mute);
 }
 
+.coach-landing-hero {
+  padding: 1rem 1.2rem 0.2rem;
+}
+
+.coach-landing-hero__content {
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.16), rgba(124, 58, 237, 0.16));
+  border: 1px solid rgba(45, 212, 191, 0.24);
+  border-radius: 16px;
+  padding: 1rem 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.coach-landing-hero__content h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--chat-text);
+}
+
+.coach-landing-hero__content p {
+  margin: 0;
+  color: var(--chat-mute);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.coach-landing-hero__mic {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: rgba(45, 212, 191, 0.16);
+  color: #ccfbf1;
+  border: 1px solid rgba(45, 212, 191, 0.38);
+  border-radius: 999px;
+  padding: 0.65rem 0.95rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.coach-landing-hero__mic:hover {
+  background: rgba(45, 212, 191, 0.24);
+  transform: translateY(-1px);
+}
+
+.chat-form__voice,
 .chat-form__send {
   background: transparent;
   color: var(--chat-mute);
   border: 1px solid var(--chat-border);
   border-radius: 10px;
-  padding: 0 1rem;
-  font-size: 1.1rem;
+  padding: 0 0.85rem;
+  min-width: 46px;
+  height: 42px;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
 }
 
+.chat-form__voice:hover,
 .chat-form__send:hover {
   color: #2dd4bf;
   border-color: rgba(45, 212, 191, 0.4);
   background: rgba(45, 212, 191, 0.06);
+  transform: translateY(-1px);
+}
+
+.chat-form__voice {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-form__voice svg,
+.coach-landing-hero__mic svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.coach-landing-hero__mic svg {
+  width: 20px;
+  height: 20px;
 }
 
 .chat-form__send:disabled {

@@ -184,36 +184,40 @@ def checkout(request):
     if request.method == 'POST':
         form = CheckoutForm(request.POST)
         if form.is_valid():
-            order = form.save(commit=False)
-            order.user = request.user
-            order.subtotal = cart.subtotal()
-            order.shipping_cost = cart.shipping()
-            order.tax = cart.tax()
-            order.total = cart.total()
-            order.save()
+            try:
+                with transaction.atomic():
+                    order = form.save(commit=False)
+                    order.user = request.user
+                    order.subtotal = cart.subtotal()
+                    order.shipping_cost = cart.shipping()
+                    order.tax = cart.tax()
+                    order.total = cart.total()
+                    order.save()
 
-            with transaction.atomic():
-                for item in cart.items.select_related('product'):
-                    # Atomic stock reduction
-                    updated = Product.objects.filter(
-                        pk=item.product.pk, stock__gte=item.quantity
-                    ).update(stock=F('stock') - item.quantity)
-                    if updated == 0:
-                        logger.warning(
-                            'Insufficient stock for product %s (qty %d)',
-                            item.product.name, item.quantity,
+                    for item in cart.items.select_related('product'):
+                        # Atomic stock reduction
+                        updated = Product.objects.filter(
+                            pk=item.product.pk, stock__gte=item.quantity
+                        ).update(stock=F('stock') - item.quantity)
+                        if updated == 0:
+                            logger.warning(
+                                'Insufficient stock for product %s (qty %d)',
+                                item.product.name, item.quantity,
+                            )
+                            raise ValueError(f"Insufficient stock for {item.product.name}")
+
+                        OrderItem.objects.create(
+                            order=order,
+                            product=item.product,
+                            product_name=item.product.name,
+                            product_price=item.product.price,
+                            quantity=item.quantity,
                         )
-                        raise ValueError(f"Insufficient stock for {item.product.name}")
 
-                    OrderItem.objects.create(
-                        order=order,
-                        product=item.product,
-                        product_name=item.product.name,
-                        product_price=item.product.price,
-                        quantity=item.quantity,
-                    )
-
-                cart.items.all().delete()
+                    cart.items.all().delete()
+            except ValueError as e:
+                messages.error(request, str(e))
+                return redirect('view-cart')
 
             messages.success(request, f'Order {order.order_number} placed successfully!')
             return redirect('order-detail', order_number=order.order_number)

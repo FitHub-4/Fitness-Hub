@@ -20,6 +20,20 @@
       <span class="chat-header__sub">AI-powered · fitness &amp; nutrition</span>
     </div>
 
+    <div class="coach-landing-hero">
+      <div class="coach-landing-hero__content">
+        <h2>AI Fitness Coach</h2>
+        <p>Ask for workouts, nutrition tips, or coaching support — just tap the mic and speak naturally.</p>
+        <button type="button" class="coach-landing-hero__mic" id="landing-voice-toggle" aria-label="Speak with voice" title="Speak with voice">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 15.5a3.5 3.5 0 0 0 3.5-3.5V6a3.5 3.5 0 1 0-7 0v6a3.5 3.5 0 0 0 3.5 3.5Z"/>
+            <path d="M7 11.5a1 1 0 0 0-2 0 5.5 5.5 0 0 0 5 5.47V20H8.5a1 1 0 1 0 0 2h7a1 1 0 1 0 0-2H14v-3.03a5.5 5.5 0 0 0 5-5.47 1 1 0 1 0-2 0 3.5 3.5 0 0 1-7 0Z"/>
+          </svg>
+          <span>Tap to speak</span>
+        </button>
+      </div>
+    </div>
+
     <div id="chat-log" class="chat-log" role="log" aria-live="polite">
       {% for m in recent %}
         {% if m.role == 'bot' %}
@@ -48,14 +62,22 @@
     </div>
 
     <form id="chat-form" class="chat-form" autocomplete="off">
-      <input
-        id="chat-input"
-        name="message"
-        type="text"
-        placeholder="Ask me anything about fitness..."
-        maxlength="600"
-        required
-      >
+      <div class="chat-form__input-wrap">
+        <input
+          id="chat-input"
+          name="message"
+          type="text"
+          placeholder="Ask me anything about fitness..."
+          maxlength="600"
+          required
+        >
+      </div>
+      <button type="button" id="voice-toggle" class="chat-form__voice" aria-label="Speak with voice" title="Speak with voice">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 15.5a3.5 3.5 0 0 0 3.5-3.5V6a3.5 3.5 0 1 0-7 0v6a3.5 3.5 0 0 0 3.5 3.5Z"/>
+          <path d="M7 11.5a1 1 0 0 0-2 0 5.5 5.5 0 0 0 5 5.47V20H8.5a1 1 0 1 0 0 2h7a1 1 0 1 0 0-2H14v-3.03a5.5 5.5 0 0 0 5-5.47 1 1 0 1 0-2 0 3.5 3.5 0 0 1-7 0Z"/>
+        </svg>
+      </button>
       <button type="submit" class="chat-form__send" aria-label="Send">&#8593;</button>
     </form>
 

@@ -3,6 +3,6 @@ django-crispy-forms
 crispy-bootstrap5
 pillow
 python-dotenv
+groq
 stripe
 coverage
-openai

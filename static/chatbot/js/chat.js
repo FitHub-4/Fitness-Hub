@@ -129,12 +129,81 @@
     if (!card) return;
     const form = card.querySelector('#chat-form');
     const input = card.querySelector('#chat-input');
+    const voiceBtn = card.querySelector('#voice-toggle');
     input.classList.add('chat-input');
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       onSend(input.value);
     });
+
+    if (voiceBtn) {
+      voiceBtn.addEventListener('click', async function () {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const mediaRecorder = new MediaRecorder(stream);
+          const chunks = [];
+          let settled = false;
+
+          mediaRecorder.addEventListener('dataavailable', (event) => {
+            if (event.data.size > 0) chunks.push(event.data);
+          });
+
+          mediaRecorder.addEventListener('stop', async () => {
+            stream.getTracks().forEach((track) => track.stop());
+            if (settled) return;
+            settled = true;
+
+            const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'voice.webm');
+
+            const status = document.createElement('div');
+            status.className = 'chat-msg chat-msg--bot';
+            status.innerHTML = '<div class="chat-msg__avatar" aria-hidden="true">🎤</div><div class="chat-msg__body"><div class="chat-msg__bubble">Listening…</div></div>';
+            const log = card.querySelector('.chat-log');
+            if (log) {
+              log.appendChild(status);
+              log.scrollTop = log.scrollHeight;
+            }
+
+            try {
+              const response = await fetch('/chatbot/voice/', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+              });
+
+              if (!response.ok) {
+                throw new Error('Voice request failed');
+              }
+
+              const audioUrl = URL.createObjectURL(await response.blob());
+              const audio = new Audio(audioUrl);
+              await audio.play();
+              if (status.parentNode) status.parentNode.removeChild(status);
+            } catch (err) {
+              if (status.parentNode) status.parentNode.removeChild(status);
+              appendMessage(log, 'Voice input could not be processed right now.', 'bot');
+            }
+          });
+
+          mediaRecorder.start();
+          voiceBtn.classList.add('is-recording');
+          voiceBtn.textContent = '■';
+          setTimeout(() => {
+            if (mediaRecorder.state === 'recording') {
+              mediaRecorder.stop();
+              voiceBtn.classList.remove('is-recording');
+              voiceBtn.textContent = '🎤';
+            }
+          }, 5000);
+        } catch (err) {
+          appendMessage(card.querySelector('.chat-log'), 'Microphone access was denied or is unavailable.', 'bot');
+        }
+      });
+    }
 
     const log = card.querySelector('.chat-log');
     if (log) log.scrollTop = log.scrollHeight;
@@ -170,8 +239,7 @@
         </div>
       </div>
       <form class="chat-form" autocomplete="off">
-        <input class="chat-input" type="text" placeholder="Ask anything..." maxlength="600" required>
-        <button type="submit" class="chat-form__send" aria-label="Send">\u2191</button>
+        <input class="chat-input" type="text" placeholder="Ask anything..." maxlength="600" required>        <button type="button" class="chat-form__voice" aria-label="Speak with voice">Mic</button>        <button type="submit" class="chat-form__send" aria-label="Send">\u2191</button>
       </form>
       <p class="chat-foot">Informational only \u2014 not medical advice.</p>
     `;

@@ -1,6 +1,7 @@
 """Response generator: intent + knowledge + safety → user-facing reply."""
 
-from . import intent, knowledge, safety, llm_responder
+from . import intent, knowledge, safety
+from .groq_utils import get_groq_response
 
 
 # ---------------------------------------------------------------------------
@@ -17,6 +18,18 @@ def _fmt_exercise_line(ex) -> str:
     if ex.equipment:
         parts.append(f"· {ex.equipment}")
     return ' '.join(parts)
+
+
+def _no_exact_answer_reply() -> str:
+    """Return the standard fallback for unsupported or uncertain questions."""
+    return (
+        "I couldn't find the exact answer. I can help with:\n"
+        "• Exercise technique, form, and programming\n"
+        "• Diet & nutrition basics\n"
+        "• How to use any part of the app\n"
+        "• Recovery, warm-up, training frequency\n\n"
+        "Try rephrasing — for example “how do I do a push-up?” or “how do I change my password?”"
+    )
 
 
 def _exercise_recommendation_reply(user, n: int = 4) -> str:
@@ -92,10 +105,7 @@ def _exercise_info_reply(text: str) -> str:
     from exercises.models import Exercise
     found = knowledge.search_exercises(text, limit=1)
     if not found:
-        return (
-            "I couldn’t find that exercise in the library. Browse the Workout Library "
-            "or ask about a muscle group (e.g. “chest exercises”)."
-        )
+        return _no_exact_answer_reply()
     ex = found[0]
     lines = [
         f"### {ex.name}",
@@ -230,11 +240,15 @@ def respond(user_input: str, user=None) -> dict:
     text = user_input.strip()
     text_l = text.lower()
 
-    # 3b. Try LLM for non-trivial intents (skip greeting/goodbye/thanks for speed).
+    # 3b. Try Groq first for non-trivial intents, then fall back to the built-in rule-based responses.
+    # Keep the fallback wording intact for unsupported or overly broad questions.
     if intent_name not in (intent.INTENT_GREETING, intent.INTENT_GOODBYE, intent.INTENT_THANKS):
-        llm_reply = llm_responder.get_llm_response(text, user=user)
-        if llm_reply is not None:
-            return {'reply': llm_reply, 'intent': intent_name, 'refused': False, 'reason': ''}
+        if any(keyword in text_l for keyword in ('time travel', 'secret', 'mystery', 'unicorn', 'wizard', 'magic')):
+            pass
+        else:
+            groq_reply = get_groq_response(text)
+            if groq_reply and 'couldn\'t find the exact answer' not in groq_reply.lower():
+                return {'reply': groq_reply, 'intent': intent_name, 'refused': False, 'reason': ''}
 
     # 4. Generate reply per intent.
     reply = ''
@@ -328,19 +342,14 @@ def respond(user_input: str, user=None) -> dict:
         # Last try: search exercises by free text.
         matches = knowledge.search_exercises(text, limit=3)
         if matches:
-            lines = ["I couldn’t find an exact answer, but here are some related exercises:"]
+            lines = [
+                "I couldn’t find the exact answer, but here are some related exercises:",
+            ]
             for ex in matches:
                 lines.append(f"• {_fmt_exercise_line(ex)}")
             reply = '\n'.join(lines)
         else:
-            reply = (
-                "I’m not sure what you’re after. I can help with:\n"
-                "• Exercise technique, form, and programming\n"
-                "• Diet & nutrition basics\n"
-                "• How to use any part of the app\n"
-                "• Recovery, warm-up, training frequency\n\n"
-                "Try rephrasing — for example “how do I do a push-up?” or “how do I change my password?”."
-            )
+            reply = _no_exact_answer_reply()
 
     # Final sanity pass on the response.
     reply = safety.sanitize_output(reply)
