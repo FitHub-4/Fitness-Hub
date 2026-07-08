@@ -105,5 +105,6 @@
     {% if user.is_authenticated %}
     <script defer src="{% static 'chatbot/js/chat.js' %}"></script>
     {% endif %}
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

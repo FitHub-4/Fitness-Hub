@@ -15,6 +15,7 @@ from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.csrf import csrf_exempt
 from groq import Groq, APIStatusError, APIConnectionError
+from urllib.parse import urlparse
 
 from .models import ChatSession, ChatMessage
 from . import responder
@@ -110,10 +111,19 @@ def groq_chat_view(request):
     return JsonResponse({'reply': reply})
 
 
-@csrf_exempt
 @require_POST
 def voice_assistant_view(request):
     """Accept microphone audio, transcribe it with Groq Whisper, generate a reply, and return speech audio."""
+    # Basic Origin/Referer check to ensure the request comes from our landing page
+    referer = request.META.get('HTTP_REFERER', '')
+    if not referer:
+        return JsonResponse({'error': 'Missing referer header'}, status=403)
+    parsed = urlparse(referer)
+    if parsed.netloc != request.get_host() or not parsed.path.startswith('/chatbot/'):
+        return JsonResponse({'error': 'Invalid request origin'}, status=403)
+    # Require AJAX header set by our frontend
+    if request.META.get('HTTP_X_REQUESTED_WITH') != 'XMLHttpRequest':
+        return JsonResponse({'error': 'Invalid request type'}, status=403)
     if 'audio' not in request.FILES:
         return JsonResponse({'error': 'No audio file uploaded.'}, status=400)
 
@@ -177,3 +187,9 @@ def voice_assistant_view(request):
     except Exception as exc:
         logger.exception('Voice assistant pipeline failed')
         return JsonResponse({'error': f'Voice processing failed: {exc}'}, status=500)
+
+
+@require_GET
+def voice_page(request):
+    """Render a small voice assistant test page."""
+    return render(request, 'chatbot/voice_assistant.html')

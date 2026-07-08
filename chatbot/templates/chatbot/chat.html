@@ -87,5 +87,10 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'chatbot/js/chat.js' %}"></script>
+  <script src="{% static 'chatbot/js/chat.js' %}"></script>
+  <script src="{% static 'chatbot/js/voice.js' %}"></script>
+  <script>
+    // Initialize voice only on this landing page
+    if (window.fitnessChatVoiceInit) window.fitnessChatVoiceInit();
+  </script>
 {% endblock %}
