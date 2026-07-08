@@ -11,11 +11,11 @@ from .groq_utils import get_groq_response
 
 
 class ChatbotTests(TestCase):
-    def test_home_page_does_not_expose_voice_coach_launcher(self):
+    def test_home_page_loads_chat_assets_for_the_fitness_coach(self):
         response = self.client.get('/')
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, 'id="mic-toggle"')
-        self.assertNotContains(response, 'voice_coach.js')
+        self.assertContains(response, 'chat.css')
+        self.assertContains(response, 'chat.js')
 
     def test_chat_api_returns_reply_and_creates_session(self):
         response = self.client.post(

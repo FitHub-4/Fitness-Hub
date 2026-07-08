@@ -123,12 +123,10 @@ def voice_assistant_view(request):
         return JsonResponse({'error': 'The uploaded audio payload is empty.'}, status=400)
 
     api_key = getattr(settings, 'GROQ_API_KEY', '').strip()
-    if not api_key:
-        return JsonResponse({'error': 'Groq API key is not configured.'}, status=500)
 
     tmp_path = None
     try:
-        client = Groq(api_key=api_key)
+        client = Groq(api_key=api_key or None)
 
         with NamedTemporaryFile(suffix=Path(audio_file.name).suffix or '.webm', delete=False) as tmp:
             for chunk in audio_file.chunks():
