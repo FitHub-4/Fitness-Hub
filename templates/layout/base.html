@@ -89,14 +89,56 @@
 
     <footer class="site-footer">
         <div class="container">
-            <div class="footer-brand-row">
-                <img src="{% static 'images/Logo.jpg' %}" alt="Fitness Hub" class="footer-logo">
+            <div class="footer-cta">
+                <div>
+                    <span class="footer-cta__eyebrow">Built for disciplined progress</span>
+                    <h3>Train with structure. Stay consistent. Perform better.</h3>
+                </div>
+                {% if user.is_authenticated %}
+                <a class="footer-cta__button" href="{% url 'dashboard' %}">Go to dashboard</a>
+                {% else %}
+                <a class="footer-cta__button" href="{% url 'register' %}">Create your account</a>
+                {% endif %}
             </div>
-            <p>Fitness Hub &copy; {% now 'Y' %} &mdash; Build strength, stay motivated, and move better every day.</p>
-            <p class="footer-contact">
-                For more info contact
-                <a href="mailto:fitnesshub.net@gmail.com">fitnesshub.net@gmail.com</a>
-            </p>
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <img src="{% static 'images/Logo.jpg' %}" alt="Fitness Hub" class="footer-logo">
+                    <h3>Fitness Hub</h3>
+                    <p>Build strength, stay consistent, and train with clarity through a smarter fitness and nutrition experience.</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-col">
+                        <h4>Explore</h4>
+                        <a href="{% url 'home' %}">Home</a>
+                        <a href="{% url 'about' %}">About</a>
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'dashboard' %}">Dashboard</a>
+                        {% else %}
+                        <a href="{% url 'login' %}">Login</a>
+                        {% endif %}
+                    </div>
+                    <div class="footer-col">
+                        <h4>Get started</h4>
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'exercise-list' %}">Workouts</a>
+                        <a href="{% url 'diet' %}">Diet</a>
+                        <a href="{% url 'goals' %}">Goals</a>
+                        {% else %}
+                        <a href="{% url 'register' %}">Create account</a>
+                        <a href="{% url 'login' %}">Sign in</a>
+                        <a href="{% url 'about' %}">How it works</a>
+                        {% endif %}
+                    </div>
+                    <div class="footer-col">
+                        <h4>Contact</h4>
+                        <a href="mailto:fitnesshub.net@gmail.com">fitnesshub.net@gmail.com</a>
+                        <span>Built for disciplined progress.</span>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>Fitness Hub &copy; {% now 'Y' %} &mdash; Designed for serious training and lasting consistency.</p>
+            </div>
         </div>
     </footer>
 
