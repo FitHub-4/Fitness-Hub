@@ -111,27 +111,22 @@ def groq_chat_view(request):
     return JsonResponse({'reply': reply})
 
 
+@csrf_exempt
 @require_POST
 def voice_assistant_view(request):
-    """Accept microphone audio, transcribe it with Groq Whisper, generate a reply, and return speech audio."""
-    # Basic Origin/Referer check to ensure the request comes from our landing page
-    referer = request.META.get('HTTP_REFERER', '')
-    if not referer:
-        return JsonResponse({'error': 'Missing referer header'}, status=403)
-    parsed = urlparse(referer)
-    if parsed.netloc != request.get_host() or not parsed.path.startswith('/chatbot/'):
-        return JsonResponse({'error': 'Invalid request origin'}, status=403)
-    # Require AJAX header set by our frontend
-    if request.META.get('HTTP_X_REQUESTED_WITH') != 'XMLHttpRequest':
-        return JsonResponse({'error': 'Invalid request type'}, status=403)
+    """Accept microphone audio, transcribe it with Groq Whisper, and return coach audio."""
     if 'audio' not in request.FILES:
         return JsonResponse({'error': 'No audio file uploaded.'}, status=400)
 
     audio_file = request.FILES['audio']
+    if getattr(audio_file, 'size', 0) <= 0:
+        return JsonResponse({'error': 'The uploaded audio payload is empty.'}, status=400)
+
     api_key = getattr(settings, 'GROQ_API_KEY', '').strip()
     if not api_key:
         return JsonResponse({'error': 'Groq API key is not configured.'}, status=500)
 
+    tmp_path = None
     try:
         client = Groq(api_key=api_key)
 
@@ -141,52 +136,67 @@ def voice_assistant_view(request):
             tmp_path = tmp.name
 
         try:
-            transcription = client.audio.transcriptions.create(
-                file=(tmp_path, audio_file.read()),
-                model='whisper-large-v3-turbo',
-                language='en',
-            )
+            with open(tmp_path, 'rb') as audio_handle:
+                transcription = client.audio.transcriptions.create(
+                    file=(audio_file.name or 'voice.webm', audio_handle),
+                    model='whisper-large-v3-turbo',
+                    language='en',
+                )
             user_text = getattr(transcription, 'text', '').strip()
-            if not user_text:
-                return JsonResponse({'error': 'No speech detected.'}, status=400)
-        finally:
-            try:
-                Path(tmp_path).unlink(missing_ok=True)
-            except Exception:
-                pass
+        except Exception as exc:
+            logger.warning('Groq transcription failed: %s', exc)
+            return JsonResponse({'error': 'Speech transcription failed.', 'detail': str(exc)}, status=502)
+
+        if not user_text:
+            return JsonResponse({'error': 'No speech detected.'}, status=400)
 
         llm_response = client.chat.completions.create(
             model=getattr(settings, 'GROQ_MODEL', 'llama-3.1-8b-instant'),
             messages=[
                 {
                     'role': 'system',
-                    'content': 'You are a friendly, highly concise fitness and nutrition coach. Answer in under 3 sentences.',
+                    'content': 'You are a friendly, highly concise fitness and nutrition coach. Answer in under 3 sentences and stay practical.',
                 },
                 {'role': 'user', 'content': user_text},
             ],
             temperature=0.7,
-            max_tokens=300,
+            max_tokens=260,
         )
-        answer_text = llm_response.choices[0].message.content.strip()
+        answer_text = getattr(llm_response.choices[0].message, 'content', '').strip()
+        if not answer_text:
+            answer_text = 'Keep going — small consistent steps still move you forward.'
 
-        speech_response = client.audio.speech.create(
-            model='canopylabs/orpheus-v1-english',
-            voice='austin',
-            input=answer_text,
-            response_format='wav',
-        )
+        try:
+            speech_response = client.audio.speech.create(
+                model='canopylabs/orpheus-v1-english',
+                voice='austin',
+                input=answer_text,
+                response_format='wav',
+            )
+            audio_bytes = speech_response.read() if hasattr(speech_response, 'read') else b''
+        except Exception as exc:
+            logger.warning('Groq speech synthesis failed: %s', exc)
+            return JsonResponse({'error': 'Speech synthesis failed.', 'detail': str(exc)}, status=502)
 
-        audio_bytes = speech_response.read()
+        if not audio_bytes:
+            return JsonResponse({'error': 'The coach returned an empty audio response.'}, status=502)
+
         return HttpResponse(audio_bytes, content_type='audio/wav')
     except APIStatusError as exc:
         logger.warning('Groq API status error: %s', exc)
-        return JsonResponse({'error': f'Groq API error: {exc}'}, status=502)
+        return JsonResponse({'error': 'Groq API error.', 'detail': str(exc)}, status=502)
     except APIConnectionError as exc:
         logger.warning('Groq API connection error: %s', exc)
-        return JsonResponse({'error': f'Groq connection error: {exc}'}, status=502)
+        return JsonResponse({'error': 'Groq connection error.', 'detail': str(exc)}, status=502)
     except Exception as exc:
         logger.exception('Voice assistant pipeline failed')
-        return JsonResponse({'error': f'Voice processing failed: {exc}'}, status=500)
+        return JsonResponse({'error': 'Voice processing failed.', 'detail': str(exc)}, status=500)
+    finally:
+        if tmp_path:
+            try:
+                Path(tmp_path).unlink(missing_ok=True)
+            except Exception:
+                pass
 
 
 @require_GET
