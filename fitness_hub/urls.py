@@ -15,6 +15,7 @@ urlpatterns = [
     path('inspiration/', include('inspiration.urls')),
     path('chatbot/', include('chatbot.urls')),
     path('social/', include('social.urls')),
+    path('achievements/', include('achievements.urls')),
 ]
 
 # Serve media files during development
