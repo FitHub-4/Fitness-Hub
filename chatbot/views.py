@@ -176,10 +176,18 @@ def voice_assistant_view(request):
             audio_bytes = speech_response.read() if hasattr(speech_response, 'read') else b''
         except Exception as exc:
             logger.warning('Groq speech synthesis failed: %s', exc)
-            return JsonResponse({'error': 'Speech synthesis failed.', 'detail': str(exc)}, status=502)
+            return JsonResponse({
+                'text': answer_text,
+                'mode': 'text',
+                'detail': str(exc),
+            })
 
         if not audio_bytes:
-            return JsonResponse({'error': 'The coach returned an empty audio response.'}, status=502)
+            return JsonResponse({
+                'text': answer_text,
+                'mode': 'text',
+                'detail': 'The coach returned an empty audio response.',
+            })
 
         return HttpResponse(audio_bytes, content_type='audio/wav')
     except APIStatusError as exc:

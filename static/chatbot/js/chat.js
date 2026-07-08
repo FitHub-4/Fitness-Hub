@@ -69,6 +69,125 @@
     return wrap;
   }
 
+  function attachVoiceInputToSurface(surface) {
+    if (!surface) return;
+    const voiceBtn = surface.querySelector('.chat-form__voice');
+    if (!voiceBtn || voiceBtn.dataset.voiceBound === 'true') return;
+
+    voiceBtn.dataset.voiceBound = 'true';
+    let mediaRecorder = null;
+    let stream = null;
+    let chunks = [];
+    let timeoutId = null;
+
+    function resetVoiceUi() {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      voiceBtn.classList.remove('is-recording');
+      voiceBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 0 0 3.5-3.5V6a3.5 3.5 0 1 0-7 0v6a3.5 3.5 0 0 0 3.5 3.5Z"/><path d="M7 11.5a1 1 0 0 0-2 0 5.5 5.5 0 0 0 5 5.47V20H8.5a1 1 0 1 0 0 2h7a1 1 0 1 0 0-2H14v-3.03a5.5 5.5 0 0 0 5-5.47 1 1 0 1 0-2 0 3.5 3.5 0 0 1-7 0Z"/></svg>';
+      voiceBtn.setAttribute('aria-pressed', 'false');
+      voiceBtn.setAttribute('aria-label', 'Speak with voice');
+    }
+
+    async function finishRecording() {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+
+      if (!chunks.length) {
+        resetVoiceUi();
+        return;
+      }
+
+      const blob = new Blob(chunks, { type: mediaRecorder && mediaRecorder.mimeType ? mediaRecorder.mimeType : 'audio/webm' });
+      const formData = new FormData();
+      formData.append('audio', blob, 'voice.webm');
+
+      const log = surface.querySelector('.chat-log');
+      const status = el('div', {
+        className: 'chat-msg chat-msg--bot',
+        html: '<div class="chat-msg__avatar" aria-hidden="true">🎤</div><div class="chat-msg__body"><div class="chat-msg__bubble">Listening…</div></div>',
+      });
+      if (log) {
+        log.appendChild(status);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      try {
+        const response = await fetch('/chatbot/voice/', {
+          method: 'POST',
+          body: formData,
+          credentials: 'same-origin',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': csrfToken(),
+          },
+        });
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({}));
+          throw new Error(payload.error || 'Voice request failed');
+        }
+
+        const audioBlob = await response.blob();
+        if (audioBlob.size) {
+          const audioUrl = URL.createObjectURL(audioBlob);
+          const audio = new Audio(audioUrl);
+          await audio.play().catch(() => {});
+        }
+
+        if (status.parentNode) status.parentNode.removeChild(status);
+      } catch (err) {
+        if (status.parentNode) status.parentNode.removeChild(status);
+        if (log) appendMessage(log, 'Voice input could not be processed right now.', 'bot');
+      } finally {
+        resetVoiceUi();
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+          stream = null;
+        }
+        mediaRecorder = null;
+        chunks = [];
+      }
+    }
+
+    voiceBtn.addEventListener('click', async function () {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        return;
+      }
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp3';
+        mediaRecorder = new MediaRecorder(stream, { mimeType });
+        chunks = [];
+
+        mediaRecorder.addEventListener('dataavailable', (event) => {
+          if (event.data && event.data.size) chunks.push(event.data);
+        });
+        mediaRecorder.addEventListener('stop', finishRecording);
+
+        mediaRecorder.start();
+        voiceBtn.classList.add('is-recording');
+        voiceBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 0 0 3.5-3.5V6a3.5 3.5 0 1 0-7 0v6a3.5 3.5 0 0 0 3.5 3.5Z"/><path d="M7 11.5a1 1 0 0 0-2 0 5.5 5.5 0 0 0 5 5.47V20H8.5a1 1 0 1 0 0 2h7a1 1 0 1 0 0-2H14v-3.03a5.5 5.5 0 0 0 5-5.47 1 1 0 1 0-2 0 3.5 3.5 0 0 1-7 0Z"/></svg>';
+        voiceBtn.setAttribute('aria-pressed', 'true');
+        voiceBtn.setAttribute('aria-label', 'Listening');
+        timeoutId = window.setTimeout(() => {
+          if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+          }
+        }, 8000);
+      } catch (err) {
+        const log = surface.querySelector('.chat-log');
+        if (log) appendMessage(log, 'Microphone access was denied or is unavailable.', 'bot');
+      }
+    });
+  }
+
   function onSend(text) {
     text = (text || '').trim();
     if (!text) return;
@@ -137,73 +256,7 @@
       onSend(input.value);
     });
 
-    if (voiceBtn) {
-      voiceBtn.addEventListener('click', async function () {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          const mediaRecorder = new MediaRecorder(stream);
-          const chunks = [];
-          let settled = false;
-
-          mediaRecorder.addEventListener('dataavailable', (event) => {
-            if (event.data.size > 0) chunks.push(event.data);
-          });
-
-          mediaRecorder.addEventListener('stop', async () => {
-            stream.getTracks().forEach((track) => track.stop());
-            if (settled) return;
-            settled = true;
-
-            const audioBlob = new Blob(chunks, { type: 'audio/webm' });
-            const formData = new FormData();
-            formData.append('audio', audioBlob, 'voice.webm');
-
-            const status = document.createElement('div');
-            status.className = 'chat-msg chat-msg--bot';
-            status.innerHTML = '<div class="chat-msg__avatar" aria-hidden="true">🎤</div><div class="chat-msg__body"><div class="chat-msg__bubble">Listening…</div></div>';
-            const log = card.querySelector('.chat-log');
-            if (log) {
-              log.appendChild(status);
-              log.scrollTop = log.scrollHeight;
-            }
-
-            try {
-              const response = await fetch('/chatbot/voice/', {
-                method: 'POST',
-                body: formData,
-                credentials: 'same-origin',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-              });
-
-              if (!response.ok) {
-                throw new Error('Voice request failed');
-              }
-
-              const audioUrl = URL.createObjectURL(await response.blob());
-              const audio = new Audio(audioUrl);
-              await audio.play();
-              if (status.parentNode) status.parentNode.removeChild(status);
-            } catch (err) {
-              if (status.parentNode) status.parentNode.removeChild(status);
-              appendMessage(log, 'Voice input could not be processed right now.', 'bot');
-            }
-          });
-
-          mediaRecorder.start();
-          voiceBtn.classList.add('is-recording');
-          voiceBtn.textContent = '■';
-          setTimeout(() => {
-            if (mediaRecorder.state === 'recording') {
-              mediaRecorder.stop();
-              voiceBtn.classList.remove('is-recording');
-              voiceBtn.textContent = '🎤';
-            }
-          }, 5000);
-        } catch (err) {
-          appendMessage(card.querySelector('.chat-log'), 'Microphone access was denied or is unavailable.', 'bot');
-        }
-      });
-    }
+    attachVoiceInputToSurface(card);
 
     const log = card.querySelector('.chat-log');
     if (log) log.scrollTop = log.scrollHeight;
@@ -238,8 +291,9 @@
           </div>
         </div>
       </div>
+      <div class="chat-hint">Tap the mic to speak naturally</div>
       <form class="chat-form" autocomplete="off">
-        <input class="chat-input" type="text" placeholder="Ask anything..." maxlength="600" required>        <button type="button" class="chat-form__voice" aria-label="Speak with voice">Mic</button>        <button type="submit" class="chat-form__send" aria-label="Send">\u2191</button>
+        <input class="chat-input" type="text" placeholder="Ask anything..." maxlength="600" required>        <button type="button" class="chat-form__voice" aria-label="Speak with voice"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 0 0 3.5-3.5V6a3.5 3.5 0 1 0-7 0v6a3.5 3.5 0 0 0 3.5 3.5Z"/><path d="M7 11.5a1 1 0 0 0-2 0 5.5 5.5 0 0 0 5 5.47V20H8.5a1 1 0 1 0 0 2h7a1 1 0 1 0 0-2H14v-3.03a5.5 5.5 0 0 0 5-5.47 1 1 0 1 0-2 0 3.5 3.5 0 0 1-7 0Z"/></svg></button>        <button type="submit" class="chat-form__send" aria-label="Send">\u2191</button>
       </form>
       <p class="chat-foot">Informational only \u2014 not medical advice.</p>
     `;
@@ -249,6 +303,7 @@
     panel.querySelector('.chat-panel__close').addEventListener('click', closeWidget);
     const form = panel.querySelector('.chat-form');
     const input = panel.querySelector('.chat-input');
+    attachVoiceInputToSurface(panel);
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       onSend(input.value);
