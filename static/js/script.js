@@ -1,4 +1,30 @@
 (function () {
+    // Theme toggle
+    (function initTheme() {
+        const saved = localStorage.getItem('fh-theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = saved || (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+    })();
+
+    function setThemeIcon() {
+        const theme = document.documentElement.getAttribute('data-theme');
+        document.querySelectorAll('.theme-toggle').forEach(function (btn) {
+            btn.textContent = theme === 'dark' ? '\u2600' : '\u263E';
+        });
+    }
+
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.theme-toggle');
+        if (!btn) return;
+        const current = document.documentElement.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('fh-theme', next);
+        setThemeIcon();
+    });
+
+    setThemeIcon();
     const menuToggle = document.getElementById('menuToggle');
     const mainNav = document.getElementById('mainNav');
 
