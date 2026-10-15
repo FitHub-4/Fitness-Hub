@@ -1,6 +1,6 @@
 # Fitness Hub
 
-Django fitness platform by **Team Codex** — exercises, goals, progress tracking, diet, store, inspiration, chatbot, social, and achievements in one app.
+Django fitness platform by **Sagar shahi** — exercises, goals, progress tracking, diet, store, inspiration, chatbot, social, and achievements in one app.
 
 ## Quick start
 
